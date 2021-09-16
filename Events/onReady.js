@@ -1,6 +1,5 @@
 const discord = require('discord.js')
 const fetchMessages = require('../Managers/MessageFetcher')
-const memberRunnable = require('../Runnables/MemberCounter')
 const embedSetupSupport = require('../EmbedSetups/supportChatEmbedSetup')
 const embedSetupBeta = require('../EmbedSetups/betatestChatEmbedSetup')
 
@@ -8,8 +7,9 @@ const embedSetupBeta = require('../EmbedSetups/betatestChatEmbedSetup')
 
 
 const activities = [
-    "with your grades",
-    "with your progress"
+    "dead",
+    "with your data",
+    "tavli kai mpiriba vre adelfe"
 ]
 
 module.exports = {
@@ -23,7 +23,6 @@ module.exports = {
                 embedSetupBeta.setup(bot)
             })
             //SetupSupport message
-            memberRunnable.start(bot)
             setInterval(() => {
                 const index = Math.floor(Math.random() * (activities.length - 1) + 1)
                 bot.user.setActivity(activities[index])

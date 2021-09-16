@@ -10,9 +10,9 @@ const welcomeEmbed = require('../EmbedSetups/welcomeEmbedSetup')
 module.exports = {
     name: "guildMemberAdd",
     execute: async (bot) => {
-        bot.on('guildMemberAdd', (guildMember) => {
-            guildMember.roles.add(config.defaultRole)
-            welcomeEmbed.setup(bot,guildMember)
-        })
+        // bot.on('guildMemberAdd', (guildMember) => {
+        //     guildMember.roles.add(config.defaultRole)
+        //     welcomeEmbed.setup(bot,guildMember)
+        // })
     }
 }

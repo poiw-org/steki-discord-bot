@@ -1,6 +1,5 @@
 const discord = require('discord.js')
 const fetchMessages = require('../Managers/MessageFetcher')
-const memberRunnable = require('../Runnables/MemberCounter')
 let Ticket = require("../Classes/Ticket.js")
 const config =  require('../Managers/configManager')()
 const db = require('quick.db');

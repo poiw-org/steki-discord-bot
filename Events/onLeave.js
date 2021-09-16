@@ -11,17 +11,17 @@ const welcomeEmbed = require('../EmbedSetups/welcomeEmbedSetup')
 module.exports = {
     name: "guildMemberRemove",
     execute: async (bot) => {
-        bot.on('guildMemberRemove', (guildMember) => {
-            let testers = db.has("BetaTesters") ? db.get("BetaTesters").list : {}
-            if(testers[guildMember.id]){
-                delete testers[guildMember.id]
-                console.log(testers)
-                db.set("BetaTesters.list",testers)
-            }
-            //Leave announce
-            announceLeave(guildMember)
+        // bot.on('guildMemberRemove', (guildMember) => {
+        //     let testers = db.has("BetaTesters") ? db.get("BetaTesters").list : {}
+        //     if(testers[guildMember.id]){
+        //         delete testers[guildMember.id]
+        //         console.log(testers)
+        //         db.set("BetaTesters.list",testers)
+        //     }
+        //     //Leave announce
+        //     announceLeave(guildMember)
 
-        })
+        // })
     }
 }
 
