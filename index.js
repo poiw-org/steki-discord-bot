@@ -1,3 +1,4 @@
+
 const discord = require('discord.js')
 const client = new discord.Client()
 const {prefix,devToken,token} = require('./Configs/botconfig.json')

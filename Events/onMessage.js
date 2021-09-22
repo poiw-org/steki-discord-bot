@@ -1,26 +1,108 @@
-const {prefix,color} = require('../Configs/botconfig.json')
+const {smtp_password,salt} = require('../Configs/botconfig.json')
 const discord = require('discord.js')
 const config = require('../Managers/configManager')()
-
+const {SMTPClient} = require("emailjs")
 const error = require('../Utils/error')
 const path = require('path')
-const db = require('quick.db');
 const request = require(`request`);
 const fs = require(`fs`);
-const rssParser = require('../Utils/Parsers/rss')
-const htmlParser = require('../Utils/Parsers/htmlParser')
-
 const emojis = require('../Configs/emojis.json')
-
-//Saffron instance
-const saffron = require("@poiw/saffron")
-
-
+const {sha256} = require("hash.js")
+const { customAlphabet } = require('nanoid/async')
+const nanoid = customAlphabet('1234567890', 6)
 
 module.exports = {
     name: "message",
     execute: async(bot) => {
-        bot.on('message',(msg) => {
+        bot.on('message', async (msg) => {
+            let channel = msg.channel;
+            if(msg.channel.name === `register-${msg.author.id}`){
+                const verificationCode = await nanoid();
+                let db = JSON.parse(msg.channel.topic)
+
+                switch (db.step){
+                    case "sendEmail":
+                        let tester = new RegExp("^\\w+([-+.']\w+)*@edu.hmu.gr$");
+                                if(tester.test(msg.content)) {
+                                    channel.send("Δώσε μου μισό λεπτάκι...")
+                                    const client = new SMTPClient({
+                                        user: 'prism@poiw.org',
+                                        password: smtp_password,
+                                        host: 'mailer.poiw.org',
+                                        ssl: true,
+                                    });
+                                    console.log(verificationCode)
+                                    client.send(
+                                        {
+                                            text: `Ο κωδικός εγγραφής σου στο Steki είναι: ${verificationCode} \n\nΜΗΝ ΤΟ ΔΩΣΕΙΣ ΣΕ ΚΑΝΕΝΑ ΑΛΛΟ ΦΟΙΤΗΤΗ/ΙΑ, ΦΙΛΟ/Η ΣΟΥ, ΜΕΛΟΣ ΔΕΠ Ή ΓΕΝΙΚΑ ΟΠΟΙΟΔΗΠΟΤΕ ΑΛΛΟ ΣΥΣΤΗΜΑ, ΠΕΡΑ ΑΠΟ ΤΟ STEKIBOT ΣΤΗ ΔΙΑΔΙΚΑΣΙΑ ΕΓΓΡΑΦΗΣ!`,
+                                            from: 'Steki <noreply@poiw.org>',
+                                            to: `<${msg.content}>`,
+                                            subject: 'Εγγραφή στο Steki',
+                                        }, (err, message) => {
+                                            if(err){
+                                                channel.send("Υπήρξε ένα σφάλμα. Παρακαλώ προσπάθησε αργότερα...")
+                                                return;
+                                            }
+                                            channel.edit({topic: `{"step": "verifyEmail", "encryptedVerificationCode": "${sha256().update((verificationCode+salt).toString()).digest('hex')}"}`})
+                                            channel.send("Τέλεια! Τσέκαρε τα εισερχόμενά σου για ένα μήνυμα με θέμα *\"Εγγραφή στο Steki\"*");
+                                            setTimeout(()=>channel.send("Όταν το λάβεις, στείλε μου τον κωδικό εγγραφής εδώ."),500)
+                                        }
+                                    );
+
+                                }else{
+                                    channel.send(":see_no_evil: Αυτό που μου έστειλες δεν μοιάζει με φοιτητικό email από το ΕΛ.ΜΕ.ΠΑ.")
+                                    setTimeout(()=>channel.send("Ένα ακαδημαϊκό, φοιτητικό email έχει την μορφή XXXXX@edu.hmu.gr. Αν είσαι πρωτοετής και δεν έχεις γραφτεί στη γραμματεία ακόμη, ολοκλήρωσε την εγγραφή σου και εγώ θα σε περιμένω εδώ για να μου στείλεις το ακαδημαϊκό σου email!"),2000)
+                                }
+                                break;
+
+                    case "verifyEmail":
+                        console.log(sha256().update(msg.content+salt).digest('hex'), db.encryptedVerificationCode)
+                        if(sha256().update(msg.content+salt).digest('hex') === db.encryptedVerificationCode){
+                            channel.edit({topic: '{"step": "chooseDept"}'})
+                                .then(()=>{
+                                    channel.send(":star_struck:  Ε-ξαι-ρε-τι-κά! Και κάτι τελευταίο: \n\n:desktop:  Hλεκτρολόγων Μηχανικών και Μηχανικών Υπολογιστών (και συγχωνευμένα τμήματα ΤΕΙ) (**ΗΡΑΚΛΕΙΟ**) (ECE)\n" +
+                                        "\n" +
+                                        ":robot: Ηλεκτρονικών Μηχανικών (**ΧΑΝΙΑ**) (EE)\n" +
+                                        "\n" +
+                                        ":gear: Μηχανολόγων Μηχανικών (MECH)\n" +
+                                        "\n" +
+                                        ":scales: Κοινωνικής Εργασίας (SW)\n" +
+                                        "\n" +
+                                        ":seedling: Γεωπονίας (AGRO)\n" +
+                                        "\n" +
+                                        ":syringe: Νοσηλευτικής (NURS)\n" +
+                                        "\n" +
+                                        ":notes: Μουσικής Τεχνολογίας & Ακουστικής (MTA)\n" +
+                                        "\n" +
+                                        ":briefcase:  Διοικητικής Επιστήμης & Τεχνολογίας (MST)\n" +
+                                        "\n" +
+                                        ":airplane:  Διοίκησης Επιχειρήσεων & Τουρισμού (BAT)\n" +
+                                        "\n" +
+                                        ":apple: Επιστημών Διατροφής & Διαιτολογίας (NDA)\n" +
+                                        "\n" +
+                                        ":money_with_wings:  Λογιστικής και Χρηματοοικονομικής (ACCFIN)\n" +
+                                        "\nΠάτα emoji που αντιστοιχεί στη σχολή σου:\n"
+                                    )
+                                        .then(message=>{
+                                            message.react("🖥️")
+                                            message.react("🤖")
+                                            message.react("⚙️")
+                                            message.react("⚖️")
+                                            message.react("🌱")
+                                            message.react("💉")
+                                            message.react("💼")
+                                            message.react("✈️")
+                                            message.react("🍎")
+                                            message.react("💸")
+                                        })
+                                })
+
+                        }else{
+                            channel.send("Χμμμ... Αυτή δεν ήταν η απάντηση που περίμενα. Δοκίμασε πάλι. Μην βάζεις emoji, κενά ή επιπλέον μπιχλιμπίδια στα μηνύματά σου μαζί μου. Θυμίσου: είμαι απλά ένας υπολογιστής και ο,τιδήποτε πέρα από την απάντηση που περιμένω με μπερδεύει...:woozy_face:")
+                        }
+                }
+
+            }
             // parseMiddleware(msg,bot)
             // let message = msg.content
             // if(!message.startsWith(prefix)) return
@@ -42,68 +124,4 @@ module.exports = {
             // }
         })
     }
-}
-
-async function parseMiddleware(message,bot){
-    if(!message.author.bot && message.attachments.first() && message.attachments.first().name.endsWith(".json") && message.channel.id === config.parsers_settings.channelId){
-
-        let load = bot.emojis.resolve(emojis["loading_dark"])
-        let embed = new discord.MessageEmbed()
-            .setColor(color)
-            .setAuthor(`${message.author.tag}`,message.author.displayAvatarURL())
-            .setDescription(`Processing ${load}`)
-            .setTimestamp()
-        let awaitEmbed = await message.channel.send(embed)
-        let fileName = await download(message.attachments.first().url)
-        if(!fileName) return awaitEmbed.delete()
-        let fileraw =  await fs.readFileSync(fileName)
-        let file;
-        try{
-            file = await JSON.parse(fileraw)
-        }catch (e){
-            await error.send(bot,message.channel,"Malformed JSON file")
-            return awaitEmbed.delete()
-        }
-        if(!file || (!file.urls && !file.url)) return awaitEmbed.delete()
-        let parsed;
-        if(file.type && file.type.toLowerCase() === "rss"){
-            parsed = await saffron.parse(file)
-/*            parsed = await rssParser.default.rssParser(file.url).catch(e=>{
-                error.send(bot,message.channel,`RSS parser Error Info: ${e} `)
-            })*/
-        }else if(file.type && file.type.toLowerCase() === "html"){
-            if(file && file.url && file.scrape && file.scrape.container && file.scrape.endPoint) {
-                parsed = await saffron.parse(file)
-               // parsed = await htmlParser.default.parse(file.url, file.scrape, file.container , file.endPoint)
-            }
-        }else if(file.type && file.type.toLowerCase() === "wordpress"){
-            if(file && file.url && file.name) {
-                parsed = await saffron.parse(file)
-            }
-        }
-        if(!parsed) {
-            await error.send(bot,message.channel,"Malformed JSON file or some provided data are wrong")
-            return awaitEmbed.delete()
-        }
-        let resultPath = path.resolve(__dirname,`../Configs/Downloads/result.json`)
-        await fs.writeFileSync(resultPath,JSON.stringify(parsed,null,4))
-        await message.channel.send(`Result`,{
-            files: [`${resultPath}`]
-        })
-        await awaitEmbed.delete()
-
-    }
-
-
-}
-async function download(url){
-    return new Promise(((resolve, reject) => {
-        let fileName = path.resolve(__dirname,`../Configs/Downloads/parserExample_${Date.now()}.json`)
-         request.get(url)
-            .on('error', console.error)
-            .pipe(fs.createWriteStream(fileName))
-            .on("finish",()=>{
-                resolve(fileName)
-            });
-    }))
 }
