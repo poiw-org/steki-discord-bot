@@ -30,7 +30,7 @@ module.exports = {
                     user: msg.author.id,
                     step: "sendEmail"
                 }
-            
+
                 switch (registration.step){
                     case "sendEmail":
                         let tester = new RegExp("^\\w+([-+.']\w+)*@edu.hmu.gr$");
@@ -129,7 +129,7 @@ module.exports = {
                                 })
 
                         }else{
-                            if(registration.failedAttempts > 3 || ! registration.encryptedVerificationCode){
+                            if(registration.failedAttempts > 2 || ! registration.encryptedVerificationCode){
                                 delete registration.encryptedVerificationCode;
                                 delete registration.failedAttempts
                                 await updateRegistration(registration)
