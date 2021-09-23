@@ -21,6 +21,8 @@
   },
   "homepage": "https://github.com/UniStudents/unistudents-bot#readme",
   "dependencies": {
+    "@sentry/node": "^6.13.2",
+    "@sentry/tracing": "^6.13.2",
     "axios": "^0.21.1",
     "date": "^1.0.2",
     "discord-paginationembed": "^2.1.0",

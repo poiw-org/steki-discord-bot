@@ -1,4 +1,22 @@
 
+
+const Sentry = require("@sentry/node");
+// or use es6 import statements
+// import * as Sentry from '@sentry/node';
+
+const Tracing = require("@sentry/tracing");
+// or use es6 import statements
+// import * as Tracing from '@sentry/tracing';
+
+Sentry.init({
+    dsn: "https://bd2cb88a443f4de3835c348b91fdfcf5@o350531.ingest.sentry.io/5975518",
+
+    // Set tracesSampleRate to 1.0 to capture 100%
+    // of transactions for performance monitoring.
+    // We recommend adjusting this value in production
+    tracesSampleRate: 1.0,
+});
+
 const discord = require('discord.js')
 const client = new discord.Client()
 const {prefix,devToken,token} = require('./Configs/botconfig.json')
