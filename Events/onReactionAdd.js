@@ -7,7 +7,8 @@ const {prefix,footerText,footerIcon,color,version} = require('../Configs/botconf
 
 
 const config =  require('../Managers/configManager')()
-const db = require('quick.db');
+const mongo = require("../Classes/Database")
+let db = mongo.db("steki")
 
 const restartRegistration = async (channel, user) => {
     channel.edit({topic: '{"step": "sendEmail"}'})
@@ -22,60 +23,63 @@ module.exports = {
     name: "messageReactionAdd",
     execute: async (bot) => {
         bot.on('messageReactionAdd',async (reaction,user) => {
+            await mongo.connect();
             let {guild} = reaction.message;
             let member = guild.members.cache.get(user.id);
             let emoji = reaction._emoji.name
-            let db = JSON.parse(reaction.message.channel.topic)
 
             if(reaction.message.channel.name === `register-${user.id}` && emoji === "🔄") await restartRegistration(reaction.message.channel, user);
-            else if(reaction.message.channel.name === `register-${user.id}` && db.step === "chooseDept"){
+            else if(reaction.message.channel.name === `register-${user.id}`){
+                let registration = await db.collection("activeRegistrations").findOne({
+                    user: user.id
+                })
                         switch (emoji) {
                             case '🖥️':
                                 member.roles.add("886993717725102103")
-                                completeRegistration(reaction.message.channel)
+                                await completeRegistration(reaction.message.channel, registration)
                                 break;
                             case '🤖':
                                 member.roles.add("887198468421083136")
-                                completeRegistration(reaction.message.channel)
+                                await completeRegistration(reaction.message.channel, registration)
                                 break;
                             case '⚙️':
                                 member.roles.add("887198536360419348")
-                                completeRegistration(reaction.message.channel)
+                                await completeRegistration(reaction.message.channel, registration)
                                 break;
                             case '👪':
                                 member.roles.add("887198604027101284")
-                                completeRegistration(reaction.message.channel)
+                                await completeRegistration(reaction.message.channel, registration)
                                 break;
                             case '🌱':
                                 member.roles.add("887198628899356683")
-                                completeRegistration(reaction.message.channel)
+                                await completeRegistration(reaction.message.channel, registration)
                                 break;
                             case '💉':
                                 member.roles.add("887198656837591041")
-                                completeRegistration(reaction.message.channel)
+                                await completeRegistration(reaction.message.channel, registration)
                                 break;
                             case '🎶':
                                 member.roles.add("887200015825641542")
-                                completeRegistration(reaction.message.channel)
+                                await completeRegistration(reaction.message.channel, registration)
                                 break;
                             case '💼':
                                 member.roles.add("887198689372815410")
-                                completeRegistration(reaction.message.channel)
+                                await completeRegistration(reaction.message.channel, registration)
                                 break;
                             case '✈️':
                                 member.roles.add("887198713628483664")
-                                completeRegistration(reaction.message.channel)
+                                await completeRegistration(reaction.message.channel, registration)
                                 break;
                             case '🍎':
                                 member.roles.add("887198734209925141")
-                                completeRegistration(reaction.message.channel)
+                                await completeRegistration(reaction.message.channel, registration)
                                 break;
                             case '💸':
                                 member.roles.add("887198782255661086")
-                                completeRegistration(reaction.message.channel)
+                                await completeRegistration(reaction.message.channel, registration)
                                 break;
                             default:
-                                reaction.message.reactions.cache.get(emoji).users.remove(user);
+                                await reaction.message.reactions.cache.get(emoji).users.remove(user);
                                 break;
                             }
         }
@@ -83,10 +87,11 @@ module.exports = {
     }
 }
 
-let completeRegistration = (channel) => {
+let completeRegistration = async (channel, registration) => {
     try {
         channel.delete()
+        await db.collection("activeRegistrations").deleteOne({_id: registration._id})
     }catch (e) {
-
+        console.log(e)
     }
 }

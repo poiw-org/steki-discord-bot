@@ -10,20 +10,39 @@ const emojis = require('../Configs/emojis.json')
 const {sha256} = require("hash.js")
 const { customAlphabet } = require('nanoid/async')
 const nanoid = customAlphabet('1234567890', 6)
+const mongo = require("../Classes/Database")
+let db = mongo.db("steki")
 
 module.exports = {
     name: "message",
     execute: async(bot) => {
         bot.on('message', async (msg) => {
+            await mongo.connect();
             let channel = msg.channel;
             if(msg.channel.name === `register-${msg.author.id}`){
                 const verificationCode = await nanoid();
-                let db = JSON.parse(msg.channel.topic)
 
-                switch (db.step){
+                let registration = await db.collection("activeRegistrations").findOne({
+                    user: msg.author.id
+                })
+
+                if(!registration) registration = {
+                    user: msg.author.id,
+                    step: "sendEmail"
+                }
+
+                console.log(registration)
+
+                switch (registration.step){
                     case "sendEmail":
                         let tester = new RegExp("^\\w+([-+.']\w+)*@edu.hmu.gr$");
                                 if(tester.test(msg.content)) {
+                                    let hashedEmail = sha256().update(msg.content).digest('hex')
+                                    let exists = await db.collection("usedEmails").findOne({email: hashedEmail})
+                                    if(exists){
+                                        channel.send("Αυτό το email έχει ήδη χρησιμοποιηθεί για εγγραφή στο Steki. Αν θεωρείς ότι έχει γίνει κάποιο λάθος, μπορείς να επικοινωνήσεις με την ομάδα διαχείρισης γράφοντας \"@ΟΜΑΔΑ ΔΙΑΧΕΙΡΙΣΗΣ\"");
+                                        return;
+                                    }
                                     channel.send("Δώσε μου μισό λεπτάκι...")
                                     const client = new SMTPClient({
                                         user: 'prism@poiw.org',
@@ -31,19 +50,22 @@ module.exports = {
                                         host: 'mailer.poiw.org',
                                         ssl: true,
                                     });
-                                    console.log(verificationCode)
                                     client.send(
                                         {
-                                            text: `Ο κωδικός εγγραφής σου στο Steki είναι: ${verificationCode} \n\nΜΗΝ ΤΟ ΔΩΣΕΙΣ ΣΕ ΚΑΝΕΝΑ ΑΛΛΟ ΦΟΙΤΗΤΗ/ΙΑ, ΦΙΛΟ/Η ΣΟΥ, ΜΕΛΟΣ ΔΕΠ Ή ΓΕΝΙΚΑ ΟΠΟΙΟΔΗΠΟΤΕ ΑΛΛΟ ΣΥΣΤΗΜΑ, ΠΕΡΑ ΑΠΟ ΤΟ STEKIBOT ΣΤΗ ΔΙΑΔΙΚΑΣΙΑ ΕΓΓΡΑΦΗΣ!`,
+                                            text: `Ο κωδικός εγγραφής σου στο Steki είναι: ${verificationCode}\n\nΜΗΝ ΤΟ ΔΩΣΕΙΣ ΣΕ ΚΑΝΕΝΑ ΑΛΛΟ ΦΟΙΤΗΤΗ/ΙΑ, ΦΙΛΟ/Η ΣΟΥ, ΜΕΛΟΣ ΔΕΠ Ή ΓΕΝΙΚΑ ΟΠΟΙΟΔΗΠΟΤΕ ΑΛΛΟ ΣΥΣΤΗΜΑ, ΠΕΡΑ ΑΠΟ ΤΟ STEKIBOT ΣΤΗ ΔΙΑΔΙΚΑΣΙΑ ΕΓΓΡΑΦΗΣ!`,
                                             from: 'Steki <noreply@poiw.org>',
                                             to: `<${msg.content}>`,
                                             subject: 'Εγγραφή στο Steki',
-                                        }, (err, message) => {
+                                        }, async (err, message) => {
                                             if(err){
-                                                channel.send("Υπήρξε ένα σφάλμα. Παρακαλώ προσπάθησε αργότερα...")
+                                                channel.send("Υπήρξε ένα σφάλμα. Παρακαλώ προσπάθησε αργότερα...");
                                                 return;
                                             }
-                                            channel.edit({topic: `{"step": "verifyEmail", "encryptedVerificationCode": "${sha256().update((verificationCode+salt).toString()).digest('hex')}"}`})
+                                            registration.step = "verifyEmail";
+                                            registration.email = msg.content;
+                                            registration.encryptedVerificationCode = sha256().update((verificationCode+salt).toString()).digest('hex');
+                                            await updateRegistration(registration);
+
                                             channel.send("Τέλεια! Τσέκαρε τα εισερχόμενά σου για ένα μήνυμα με θέμα *\"Εγγραφή στο Steki\"*");
                                             setTimeout(()=>channel.send("Όταν το λάβεις, στείλε μου τον κωδικό εγγραφής εδώ."),500)
                                         }
@@ -56,49 +78,69 @@ module.exports = {
                                 break;
 
                     case "verifyEmail":
-                        console.log(sha256().update(msg.content+salt).digest('hex'), db.encryptedVerificationCode)
-                        if(sha256().update(msg.content+salt).digest('hex') === db.encryptedVerificationCode){
-                            channel.edit({topic: '{"step": "chooseDept"}'})
-                                .then(()=>{
-                                    channel.send(":star_struck:  Ε-ξαι-ρε-τι-κά! Και κάτι τελευταίο: \n\n:desktop:  Hλεκτρολόγων Μηχανικών και Μηχανικών Υπολογιστών (και συγχωνευμένα τμήματα ΤΕΙ) (**ΗΡΑΚΛΕΙΟ**) (ECE)\n" +
-                                        "\n" +
-                                        ":robot: Ηλεκτρονικών Μηχανικών (**ΧΑΝΙΑ**) (EE)\n" +
-                                        "\n" +
-                                        ":gear: Μηχανολόγων Μηχανικών (MECH)\n" +
-                                        "\n" +
-                                        ":family: Κοινωνικής Εργασίας (SW)\n" +
-                                        "\n" +
-                                        ":seedling: Γεωπονίας (AGRO)\n" +
-                                        "\n" +
-                                        ":syringe: Νοσηλευτικής (NURS)\n" +
-                                        "\n" +
-                                        ":notes: Μουσικής Τεχνολογίας & Ακουστικής (MTA)\n" +
-                                        "\n" +
-                                        ":briefcase:  Διοικητικής Επιστήμης & Τεχνολογίας (MST)\n" +
-                                        "\n" +
-                                        ":airplane:  Διοίκησης Επιχειρήσεων & Τουρισμού (BAT)\n" +
-                                        "\n" +
-                                        ":apple: Επιστημών Διατροφής & Διαιτολογίας (NDA)\n" +
-                                        "\n" +
-                                        ":money_with_wings:  Λογιστικής και Χρηματοοικονομικής (ACCFIN)\n" +
-                                        "\nΠάτα το emoji που αντιστοιχεί στη σχολή σου:\n"
-                                    )
-                                        .then(message=>{
-                                            message.react("🖥️")
-                                            message.react("🤖")
-                                            message.react("⚙️")
-                                            message.react("👪")
-                                            message.react("🌱")
-                                            message.react("💉")
-                                            message.react("💼")
-                                            message.react("✈️")
-                                            message.react("🍎")
-                                            message.react("💸")
-                                        })
+                        if(registration.encryptedVerificationCode && sha256().update(msg.content+salt).digest('hex') === registration.encryptedVerificationCode){
+                            if(registration.email){
+                                mongo.db("steki").collection("usedEmails").insertOne({
+                                    email: sha256().update(registration.email).digest('hex')
+                                })
+                            }
+
+                            registration.step = "chooseDept";
+                            delete registration.encryptedVerificationCode;
+                            await updateRegistration(registration);
+
+                            channel.send(":star_struck:  Ε-ξαι-ρε-τι-κά! Και κάτι τελευταίο: \n\n:desktop:  Hλεκτρολόγων Μηχανικών και Μηχανικών Υπολογιστών (και συγχωνευμένα τμήματα ΤΕΙ) (**ΗΡΑΚΛΕΙΟ**) (ECE)\n" +
+                                "\n" +
+                                ":robot: Ηλεκτρονικών Μηχανικών (**ΧΑΝΙΑ**) (EE)\n" +
+                                "\n" +
+                                ":gear: Μηχανολόγων Μηχανικών (MECH)\n" +
+                                "\n" +
+                                ":family: Κοινωνικής Εργασίας (SW)\n" +
+                                "\n" +
+                                ":seedling: Γεωπονίας (AGRO)\n" +
+                                "\n" +
+                                ":syringe: Νοσηλευτικής (NURS)\n" +
+                                "\n" +
+                                ":notes: Μουσικής Τεχνολογίας & Ακουστικής (MTA)\n" +
+                                "\n" +
+                                ":briefcase:  Διοικητικής Επιστήμης & Τεχνολογίας (MST)\n" +
+                                "\n" +
+                                ":airplane:  Διοίκησης Επιχειρήσεων & Τουρισμού (BAT)\n" +
+                                "\n" +
+                                ":apple: Επιστημών Διατροφής & Διαιτολογίας (NDA)\n" +
+                                "\n" +
+                                ":money_with_wings:  Λογιστικής και Χρηματοοικονομικής (ACCFIN)\n" +
+                                "\nΠάτα το emoji που αντιστοιχεί στη σχολή σου:\n"
+                            )
+                                .then(message=>{
+                                    try{
+                                        message.react("🖥️")
+                                        message.react("🤖")
+                                        message.react("⚙️")
+                                        message.react("👪")
+                                        message.react("🌱")
+                                        message.react("💉")
+                                        message.react("💼")
+                                        message.react("✈️")
+                                        message.react("🍎")
+                                        message.react("💸")
+                                    }catch (e) {
+
+                                    }
+
                                 })
 
                         }else{
+                            if(registration.failedAttempts > 3 || ! registration.encryptedVerificationCode){
+                                delete registration.encryptedVerificationCode;
+                                delete registration.failedAttempts
+                                await updateRegistration(registration)
+                                channel.send("Για λόγους ασφαλείας ο κωδικός εγγραφής σου έχει καταστραφεί. Παρακαλώ επανεκκίνησε τη διαδικασία, πατώντας το :arrows_counterclockwise: που βρίσκεται παραπάνω.")
+                                return;
+                            }
                             channel.send("Χμμμ... Αυτή δεν ήταν η απάντηση που περίμενα. Δοκίμασε πάλι. Μην βάζεις emoji, κενά ή επιπλέον μπιχλιμπίδια στα μηνύματά σου μαζί μου. Θυμίσου: είμαι απλά ένας υπολογιστής και ο,τιδήποτε πέρα από την απάντηση που περιμένω με μπερδεύει...:woozy_face:")
+                            registration.failedAttempts = registration.failedAttempts + 1 || 1
+                            await updateRegistration(registration)
                         }
                 }
 
@@ -123,5 +165,13 @@ module.exports = {
             //     }
             // }
         })
+    }
+}
+
+const updateRegistration = async (registration) => {
+    if(registration._id){
+        await db.collection("activeRegistrations").updateOne({_id: registration._id}, {$set: {...registration}})
+    }else{
+        await db.collection("activeRegistrations").insertOne(registration)
     }
 }

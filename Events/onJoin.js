@@ -17,7 +17,7 @@ module.exports = {
 
             let channel = guildMember.guild.channels.create(`register-${guildMember.id}`, {
                     type: "text",
-                    topic: '{"step": "sendEmail"}',
+                    topic: `Ολοκλήρωσε την εγγραφή σου για να μπορέσεις να δείς όλα τα κανάλια στο Steki!`,
                     parent: "890021609631531009",
                     permissionOverwrites: [
                         {

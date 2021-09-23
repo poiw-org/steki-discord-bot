@@ -1,13 +1,9 @@
 const messages = require(`../Configs/fetchMessages.json`)
-const db = require('quick.db');
-const {log} = require("nodemon/lib/utils");
 
 
 
 module.exports.fetch = async function (bot) {
     //PreSet Messages
-    let tickets = db.has("Tickets") ? db.get("Tickets") : []
-    let applications = db.has("Applications") ? db.get("Applications") : []
 
 
     let fetchMessagesPromises = messages.map(message =>fetch(message["channelID"],message["messageID"],bot))
@@ -21,7 +17,6 @@ module.exports.fetch = async function (bot) {
                             users.map(user=>{
                                 if(user.bot){
                                     fetchMessagesPromises = [].concat.apply([],[fetchMessagesPromises, [fetch(channel.id,message.id,bot)]])
-
                                 }
                             })
                         })
@@ -30,11 +25,7 @@ module.exports.fetch = async function (bot) {
             })
         })
     })
-    let ticketPromises = tickets.map(ticket => fetch(ticket["channelID"],ticket["initialMessageID"],bot))
-    let applicationPromises = applications.map(ticket => fetch(ticket["channelID"],ticket["initialMessageID"],bot))
-    let applicationAcceptPromises = applications.map(ticket => fetch(ticket["channelID"],ticket["acceptMessageID"],bot))
-    console.log(fetchMessagesPromises)
-    let promises = [].concat.apply([], [ticketPromises,fetchMessagesPromises,applicationPromises,applicationAcceptPromises]);
+    let promises = [].concat.apply([], [fetchMessagesPromises]);
     return Promise.all(promises)
 }
 
