@@ -30,9 +30,7 @@ module.exports = {
                     user: msg.author.id,
                     step: "sendEmail"
                 }
-
-                console.log(registration)
-
+            
                 switch (registration.step){
                     case "sendEmail":
                         let tester = new RegExp("^\\w+([-+.']\w+)*@edu.hmu.gr$");
