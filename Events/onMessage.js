@@ -43,19 +43,21 @@ module.exports = {
                                     }
                                     channel.send("Δώσε μου μισό λεπτάκι...")
                                     const client = new SMTPClient({
-                                        user: 'prism@poiw.org',
+                                        user: 'steki@poiw.org',
                                         password: smtp_password,
-                                        host: 'mailer.poiw.org',
+                                        host: 'server.mail.poiw.org',
                                         ssl: true,
+                                        timeout: 99999999999999999999999999
                                     });
                                     client.send(
                                         {
                                             text: `Ο κωδικός εγγραφής σου στο Steki είναι: ${verificationCode}\n\nΜΗΝ ΤΟ ΔΩΣΕΙΣ ΣΕ ΚΑΝΕΝΑ ΑΛΛΟ ΦΟΙΤΗΤΗ/ΙΑ, ΦΙΛΟ/Η ΣΟΥ, ΜΕΛΟΣ ΔΕΠ Ή ΓΕΝΙΚΑ ΟΠΟΙΟΔΗΠΟΤΕ ΑΛΛΟ ΣΥΣΤΗΜΑ, ΠΕΡΑ ΑΠΟ ΤΟ STEKIBOT ΣΤΗ ΔΙΑΔΙΚΑΣΙΑ ΕΓΓΡΑΦΗΣ!`,
-                                            from: 'Steki <noreply@poiw.org>',
+                                            from: 'Steki <steki@poiw.org>',
                                             to: `<${msg.content}>`,
                                             subject: 'Εγγραφή στο Steki',
                                         }, async (err, message) => {
                                             if(err){
+                                                console.log(err);
                                                 channel.send("Υπήρξε ένα σφάλμα. Παρακαλώ προσπάθησε αργότερα...");
                                                 return;
                                             }

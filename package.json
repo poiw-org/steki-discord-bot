@@ -24,6 +24,7 @@
     "@sentry/node": "^6.13.2",
     "@sentry/tracing": "^6.13.2",
     "axios": "^0.21.1",
+    "cron": "^1.8.2",
     "date": "^1.0.2",
     "discord-paginationembed": "^2.1.0",
     "discord.js": "^12.5.1",
@@ -33,21 +34,13 @@
     "luxon": "^1.26.0",
     "mongodb": "^4.1.2",
     "nanoid": "^3.1.25",
+    "node-schedule": "^2.0.0",
     "nodemon": "^2.0.7",
     "path": "^0.12.7",
-    "quick.db": "^7.1.3",
     "request": "^2.88.2",
     "striptags": "^3.2.0"
   },
   "devDependencies": {
-    "@babel/cli": "^7.15.7",
-    "@babel/core": "^7.15.5",
-    "@babel/preset-env": "^7.15.6",
-    "babel-core": "^6.26.3",
-    "babel-loader": "^8.2.2",
-    "babel-polyfill": "^6.26.0",
-    "babel-preset-es2015": "^6.24.1",
-    "babel-preset-stage-0": "^6.24.1",
     "nodemon": "^2.0.7"
   }
 }
