@@ -1,5 +1,5 @@
 module.exports = () => {
-    switch(process.env.NODE_ENV.toString().trim()){
+    switch(process.env.NODE_ENV){
         case 'development':
             return require('../Configs/developmentConfig.json')
         case 'production':

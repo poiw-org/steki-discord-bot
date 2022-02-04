@@ -11,17 +11,19 @@ const {sha256} = require("hash.js")
 const { customAlphabet } = require('nanoid/async')
 const nanoid = customAlphabet('1234567890', 6)
 const mongo = require("../Classes/Database")
+const botLogs = require("../Utils/botLogs")
 let db = mongo.db("steki")
 
 module.exports = {
     name: "message",
     execute: async(bot) => {
-        bot.on('message', async (msg) => {
+        bot.on('message', async (msg, user) => {
             await mongo.connect();
             let channel = msg.channel;
             if(msg.channel.name === `register-${msg.author.id}`){
                 const verificationCode = await nanoid();
 
+                botLogs(bot, `Ο χρήστης <@${msg.author.id}> έστειλε το εξής mail για εγγραφή: ${msg.content}`)
                 let registration = await db.collection("activeRegistrations").findOne({
                     user: msg.author.id
                 })
@@ -33,12 +35,13 @@ module.exports = {
 
                 switch (registration.step){
                     case "sendEmail":
-                        let tester = new RegExp("^\\w+([-+.']\w+)*@edu.hmu.gr$");
+                        let tester = new RegExp("th[0-9]+@edu.hmu.gr$");
                                 if(tester.test(msg.content)) {
                                     let hashedEmail = sha256().update(msg.content).digest('hex')
                                     let exists = await db.collection("usedEmails").findOne({email: hashedEmail})
                                     if(exists){
-                                        channel.send("Αυτό το email έχει ήδη χρησιμοποιηθεί για εγγραφή στο Steki. Αν θεωρείς ότι έχει γίνει κάποιο λάθος, μπορείς να επικοινωνήσεις με την ομάδα διαχείρισης γράφοντας \"@ΟΜΑΔΑ ΔΙΑΧΕΙΡΙΣΗΣ\"");
+                                        botLogs(bot, `Το ${msg.content} έχει ήδη χρησιμοποιηθεί για εγγραφή. Αναγνωριστικό για αφαίρεση απο db: ${hashedEmail}.`)
+                                        channel.send(`Αυτό το email έχει ήδη χρησιμοποιηθεί για εγγραφή στο Steki. Αν θεωρείς ότι έχει γίνει κάποιο λάθος, στείλε ένα μήνυμα στο <#939177847933780018>. \n\`Αναγνωριστικό Email: ${hashedEmail}\``);
                                         return;
                                     }
                                     channel.send("Δώσε μου μισό λεπτάκι...")
@@ -72,8 +75,8 @@ module.exports = {
                                     );
 
                                 }else{
-                                    channel.send(":see_no_evil: Αυτό που μου έστειλες δεν μοιάζει με φοιτητικό email από το ΕΛ.ΜΕ.ΠΑ.")
-                                    setTimeout(()=>channel.send("Ένα ακαδημαϊκό, φοιτητικό email έχει την μορφή XXXXX@edu.hmu.gr. Αν είσαι πρωτοετής και δεν έχεις γραφτεί στη γραμματεία ακόμη, ολοκλήρωσε την εγγραφή σου και εγώ θα σε περιμένω εδώ για να μου στείλεις το ακαδημαϊκό σου email!"),2000)
+                                    channel.send(":see_no_evil: Αυτό που μου έστειλες δεν μοιάζει με φοιτητικό email από το H.M.M.Y. ΕΛ.ΜΕ.ΠΑ.")
+                                    setTimeout(()=>channel.send("Ένα ακαδημαϊκό, φοιτητικό email έχει την μορφή thXXXXX@edu.hmu.gr. Αν είσαι πρωτοετής και δεν έχεις γραφτεί στη γραμματεία ακόμη, ολοκλήρωσε την εγγραφή σου και εγώ θα σε περιμένω εδώ για να μου στείλεις το ακαδημαϊκό σου email!"),2000)
                                 }
                                 break;
 
@@ -84,51 +87,13 @@ module.exports = {
                                     email: sha256().update(registration.email).digest('hex')
                                 })
                             }
+                            let {guild} = msg;
+                            let member = guild.members.cache.get(msg.author.id);
 
-                            registration.step = "chooseDept";
-                            delete registration.encryptedVerificationCode;
-                            await updateRegistration(registration);
+                            member.roles.add("886993717725102103")
+                            await completeRegistration(channel, registration)
 
-                            channel.send(":star_struck:  Ε-ξαι-ρε-τι-κά! Και κάτι τελευταίο: \n\n:desktop:  Hλεκτρολόγων Μηχανικών και Μηχανικών Υπολογιστών (και συγχωνευμένα τμήματα ΤΕΙ) (**ΗΡΑΚΛΕΙΟ**) (ECE)\n" +
-                                "\n" +
-                                ":robot: Ηλεκτρονικών Μηχανικών (**ΧΑΝΙΑ**) (EE)\n" +
-                                "\n" +
-                                ":gear: Μηχανολόγων Μηχανικών (MECH)\n" +
-                                "\n" +
-                                ":family: Κοινωνικής Εργασίας (SW)\n" +
-                                "\n" +
-                                ":seedling: Γεωπονίας (AGRO)\n" +
-                                "\n" +
-                                ":syringe: Νοσηλευτικής (NURS)\n" +
-                                "\n" +
-                                ":notes: Μουσικής Τεχνολογίας & Ακουστικής (MTA)\n" +
-                                "\n" +
-                                ":briefcase:  Διοικητικής Επιστήμης & Τεχνολογίας (MST)\n" +
-                                "\n" +
-                                ":airplane:  Διοίκησης Επιχειρήσεων & Τουρισμού (BAT)\n" +
-                                "\n" +
-                                ":apple: Επιστημών Διατροφής & Διαιτολογίας (NDA)\n" +
-                                "\n" +
-                                ":money_with_wings:  Λογιστικής και Χρηματοοικονομικής (ACCFIN)\n" +
-                                "\nΠάτα το emoji που αντιστοιχεί στη σχολή σου:\n"
-                            )
-                                .then(message=>{
-                                    try{
-                                        message.react("🖥️")
-                                        message.react("🤖")
-                                        message.react("⚙️")
-                                        message.react("👪")
-                                        message.react("🌱")
-                                        message.react("💉")
-                                        message.react("💼")
-                                        message.react("✈️")
-                                        message.react("🍎")
-                                        message.react("💸")
-                                    }catch (e) {
-
-                                    }
-
-                                })
+                            
 
                         }else{
                             if(registration.failedAttempts > 2 || ! registration.encryptedVerificationCode){
@@ -138,7 +103,8 @@ module.exports = {
                                 channel.send("Για λόγους ασφαλείας ο κωδικός εγγραφής σου έχει καταστραφεί. Παρακαλώ επανεκκίνησε τη διαδικασία, πατώντας το :arrows_counterclockwise: που βρίσκεται παραπάνω.")
                                 return;
                             }
-                            channel.send("Χμμμ... Αυτή δεν ήταν η απάντηση που περίμενα. Δοκίμασε πάλι. Μην βάζεις emoji, κενά ή επιπλέον μπιχλιμπίδια στα μηνύματά σου μαζί μου. Θυμίσου: είμαι απλά ένας υπολογιστής και ο,τιδήποτε πέρα από την απάντηση που περιμένω με μπερδεύει...:woozy_face:")
+                            channel.send("Χμμμ... Αυτή δεν ήταν η απάντηση που περίμενα. Χρειάζομαι *μόνο* τον 6-ψήφιο κωδικό εγγραφής που αναγράφει το mail :woozy_face:.")
+                            channel.send("*Ενημέρωση από την Ομάδα Διαχείρισης, λόγω πρόσφατων συμβάντων:*\n```Οποιαδήποτε προσπάθεια tampering με το bot (reverse engineering, pen-testing κλπ) καταγράφεται, ενώ επαναλλαμβανόμενοι παραβάτες θα γίνονται ban από τον σέρβερ οριστικά.```")
                             registration.failedAttempts = registration.failedAttempts + 1 || 1
                             await updateRegistration(registration)
                         }
@@ -173,5 +139,14 @@ const updateRegistration = async (registration) => {
         await db.collection("activeRegistrations").updateOne({_id: registration._id}, {$set: {...registration}})
     }else{
         await db.collection("activeRegistrations").insertOne(registration)
+    }
+}
+
+let completeRegistration = async (channel, registration) => {
+    try {
+        channel.delete()
+        await db.collection("activeRegistrations").deleteOne({_id: registration._id})
+    }catch (e) {
+        console.log(e)
     }
 }

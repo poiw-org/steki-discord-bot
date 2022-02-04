@@ -2,14 +2,17 @@ const discord = require('discord.js')
 const fetchMessages = require('../Managers/MessageFetcher')
 const embedSetupSupport = require('../EmbedSetups/supportChatEmbedSetup')
 const embedSetupBeta = require('../EmbedSetups/betatestChatEmbedSetup')
-
+// const saffron = require("@poiw/saffron")
 const schedule = require('node-schedule');
-
-
+const config = require("../Configs/botconfig.json")
+const {NodeHtmlMarkdown} =  require("node-html-markdown")
+const truncate = require('truncate');
 const activities = [
     "dead",
-    "with your data",
-    "tavli kai mpiriba vre adelfe"
+    "with your academic data",
+    "\"Pistevw pws tha perasw mageiropoulo\" Simulator 2022",
+    "pws kanw print stin python?",
+    "--insert funny joke here--",
 ]
 
 module.exports = {
@@ -27,17 +30,51 @@ module.exports = {
    
             // Προωθήσεις: 887068592363950100
             // System: 887044231963770901
-            schedule.scheduleJob('0 10 * * 6', function(){
-                bot.channels.fetch("887068592363950100").then(channel=>{
-                        channel.send("Ξημέρωσε Σάββατο, τι όμορφη ημέρα! Λεω να εισέλθω εις το γραφείο μου και να το απολυμάνω με μπενταντίν. Σας συνιστώ να πράξετε ομοίως στο δωμάτιο σας, το οποίο είμαι σίγουρος πως έχει να ξεσκονισθεί από την ημέρα που πρώτο μπήκατε σε αυτό.\nΗ βλαχάρα <@887331122160230451> ως συνήθως ακούει αυτές τις αποτρόπαιες και σατανικές χαζομάρες στο <#894205634482954270>. Αχ, πότε θα έρθει εκείνη η ημέρα που θα ξεκουμπιστεί από το σπίτι να με αφήσει ήσυχο ;!")
-                })
-              });
+
+            // schedule.scheduleJob('0 10 * * 6', function(){
+            //     bot.channels.fetch("887068592363950100").then(channel=>{
+            //         // channel.send("Σήμερον η διάθεση είναι: γενική φασίνα στο σπίτι, ακούγοντας τα κλαμπατσίμπανα της βλαχάρας στο <#894205634482954270>. Εμπρός! (*ΣΑΑΑΚΗΗΗΗΗΗΗΗΗΗΗΗΗΗ*)")
+            //     })
+            //   });
             
-            schedule.scheduleJob('0 18 * * 1,3,5', function(){
-                bot.channels.fetch("887068592363950100").then(channel=>{
-                        channel.send("Είναι ήδη έξι και γλυκοχαράζει η νύχτα! Άκουσα πως η δεσποινίς <@887341904830795878> εκπέμπει διά μέσω του καναλιού <#887342520651087973> άκρως χαλαρωτική και γαλήνια μουσική! Θα συντονισθώ και εγώ έως ότου νυχτώσει, καθώς μελετώ και τελειώνω μερικές σελίδες από το σύγγραμμα μου.")
-                })
-              });
+            // schedule.scheduleJob('0 18 * * 1,3,5', function(){
+            //     bot.channels.fetch("887068592363950100").then(channel=>{
+            //             channel.send("Είναι ήδη έξι το βράδυ και ώρα να στροθούμε στο διάβασμα! Το πτυχίο δεν λαμβάνεται δια μέσω βαρεμάρας φίλτατοι. Σι γιού ατ <#887342520651087973> μπίτσεζ... :wink: ")
+            //     })
+            //   });
+
+                // await saffron.initialize({ 
+                //     mode: "main",
+                //     database:{
+                //         driver: "mongodb",
+                //         config: {
+                //             url: config.saffron_db, // The mongodb url
+                //           }
+                //     },
+                //     scheduler: {
+                //         intervalBetweenJobs: 1000,
+                //         heavyJobFailureInterval: 120000,
+                //     },
+                //     sources:{
+                //         "path": "/sources",
+                //         "excluded": []
+                //       }
+                // })
+                
+                // await saffron.start()
+
+                // saffron.on("workers.articles.new", async articles => {
+                //     for(let article of articles){
+                //         article.content = NodeHtmlMarkdown.translate(article.content.trim());
+                //         config.secretary_channels[article.source.name].forEach(channel=>{
+                //             bot.channels.fetch(channel).then(channel=>{
+                //                 channel.send(`**${article.title}**\n\n${truncate(article.content,1000)}\n\n**Διάβασε την ανακοίνωση εδώ: ${article.link}**`)
+                //             })
+                //         })
+                //     }
+                //     return articles
+                // })
+   
 
             bot.channels.fetch("886981920108478526").then(channel=>{
                 setInterval(() => {
