@@ -109,3 +109,4 @@ json.sqlite
 .tern-port
 json.sqlite
 *.sqlite
+Classes/Configs/botconfig.json
