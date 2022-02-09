@@ -34,7 +34,7 @@ module.exports = {
 
                 switch (registration.step){
                     case "sendEmail":
-                        botLogs(bot, `Ο χρήστης <@${msg.author.id}> έστειλε το εξής mail για εγγραφή: ${msg.content}`)
+                        botLogs(bot, `Ο χρήστης <@${msg.author.id}> έστειλε το εξής mail για εγγραφή.`)
 
                         let tester = new RegExp("th[0-9]+@edu.hmu.gr$");
                                 if(tester.test(msg.content)) {
@@ -63,6 +63,7 @@ module.exports = {
                                             if(err){
                                                 console.log(err);
                                                 channel.send("Υπήρξε ένα σφάλμα. Παρακαλώ προσπάθησε αργότερα...");
+                                                botLogs(bot, `Κατά την αποστολή email στον <@${msg.author.id}> προέκυψε σφάλμα. Now the fun begins...`)
                                                 return;
                                             }
                                             registration.step = "verifyEmail";
@@ -71,11 +72,13 @@ module.exports = {
                                             await updateRegistration(registration);
 
                                             channel.send("Τέλεια! Τσέκαρε τα εισερχόμενά σου για ένα μήνυμα με θέμα *\"Εγγραφή στο Steki\"*");
+                                            botLogs(bot, `Ο χρήστης <@${msg.author.id}> έλαβε στο inbox του τον κωδικό εγγραφής \`\`\`Hash: ${registration.encryptedVerificationCode}\`\`\` .`)
                                             setTimeout(()=>channel.send("Όταν το λάβεις, στείλε μου τον κωδικό εγγραφής εδώ."),500)
                                         }
                                     );
 
                                 }else{
+                                    botLogs(bot, `Ο χρήστης <@${msg.author.id}> έστειλε κάτι το οποίο δεν μοιάζει με email από το ΗΜΜΥ.`)
                                     channel.send(":see_no_evil: Αυτό που μου έστειλες δεν μοιάζει με φοιτητικό email από το H.M.M.Y. ΕΛ.ΜΕ.ΠΑ.")
                                     setTimeout(()=>channel.send("Ένα ακαδημαϊκό, φοιτητικό email έχει την μορφή thXXXXX@edu.hmu.gr. Αν είσαι πρωτοετής και δεν έχεις γραφτεί στη γραμματεία ακόμη, ολοκλήρωσε την εγγραφή σου και εγώ θα σε περιμένω εδώ για να μου στείλεις το ακαδημαϊκό σου email!"),2000)
                                 }
@@ -93,7 +96,8 @@ module.exports = {
 
                             member.roles.add("886993717725102103")
                             await completeRegistration(channel, registration)
-
+                            botLogs(bot, `Ο χρήστης <@${msg.author.id}> ολοκλήρωσε με επιτυχία την εγγραφή του.`)
+                            
                             
 
                         }else{
@@ -101,6 +105,7 @@ module.exports = {
                                 delete registration.encryptedVerificationCode;
                                 delete registration.failedAttempts
                                 await updateRegistration(registration)
+                                botLogs(bot, `Ο χρήστης <@${msg.author.id}> έβαλε 4 φορές λάθος κωδικό εγγραφής. Η διαδικασία πρέπει να επανακινηθεί.`)
                                 channel.send("Για λόγους ασφαλείας ο κωδικός εγγραφής σου έχει καταστραφεί. Παρακαλώ επανεκκίνησε τη διαδικασία, πατώντας το :arrows_counterclockwise: που βρίσκεται παραπάνω.")
                                 return;
                             }
