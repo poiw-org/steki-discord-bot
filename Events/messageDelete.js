@@ -7,6 +7,8 @@ module.exports = {
         bot.on('messageDelete', async (message) => {
             //Stop commands
             let channel = message.channel;
+            let author = message.guild.members.cache.get(message.author.id)
+            if(author._roles.includes("886976948172124160") || author._roles.includes("887063786240999475")) return;
             let deletedContent = message.content;
             //Code to find who deleted the message
             const fetchedLogs = await message.guild.fetchAuditLogs({

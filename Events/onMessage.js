@@ -13,13 +13,66 @@ const nanoid = customAlphabet('1234567890', 6)
 const mongo = require("../Classes/Database")
 const botLogs = require("../Utils/botLogs")
 let db = mongo.db("steki")
-
+process.env["NODE_TLS_REJECT_UNAUTHORIZED"] = 0;
 module.exports = {
     name: "message",
     execute: async(bot) => {
         bot.on('message', async (msg, user) => {
             await mongo.connect();
             let channel = msg.channel;
+            if(channel.id == "939180081857839174"){
+                let author = msg.guild.members.cache.get(msg.author.id)
+                if(author._roles.includes("886976948172124160")){
+                    if(msg.content.startsWith("addEmail")){
+                        msg.delete()
+                        let _message = msg.content.split(" ");
+
+                        if(_message.length !== 2) return botLogs(bot, "Εντολή addEmail: προσθέτει ένα email στην db με hashed μορφή. Χρήση: ```addEmail th00000@edu.hmu.gr```");
+
+                        let hashedEmail = sha256().update(_message[1]).digest('hex')
+                        let exists = await db.collection("usedEmails").findOne({email: hashedEmail})
+                        if(exists) return botLogs(bot, `Αυτό το email υπάρχει ήδη στην db.`)
+                        
+                        await mongo.db("steki").collection("usedEmails").insertOne({
+                            email: hashedEmail
+                        })
+
+                        botLogs(bot, `Το email \`Hash: ${hashedEmail}\` προστέθηκε στην db.`)
+                    }
+
+                    if(msg.content.startsWith("removeEmail")){
+                        msg.delete()
+                        let _message = msg.content.split(" ");
+
+                        if(_message.length !== 2) return botLogs(bot, "Εντολή removeEmail: αφαιρεί ένα email από την db. Χρήση: ```removeEmail th00000@edu.hmu.gr```");
+
+                        let hashedEmail = sha256().update(_message[1]).digest('hex')
+                        let exists = await db.collection("usedEmails").findOne({email: hashedEmail})
+                        if(!exists) return botLogs(bot, `Αυτό το email δεν υπάρχει στην db.`)
+                        
+                        await mongo.db("steki").collection("usedEmails").deleteOne({
+                            email: hashedEmail
+                        })
+
+                        botLogs(bot, `Το email \`Hash: ${hashedEmail}\` αφαιρέθηκε από την db.`)
+                    }
+
+                    if(msg.content.startsWith("removeHash")){
+                        msg.delete()
+                        let _message = msg.content.split(" ");
+
+                        if(_message.length !== 2) return botLogs(bot, "Εντολή removeHash: αφαιρεί ένα hash από την db. Χρήση: ```removeHash d4f92d348254ca39fd4d85400194acce59ae294eab802ef7befd9b5fd2e3d28b```");
+
+                        let exists = await db.collection("usedEmails").findOne({email: _message[1]})
+                        if(!exists) return botLogs(bot, `Αυτό το hash δεν υπάρχει στην db.`)
+                        
+                        await mongo.db("steki").collection("usedEmails").deleteOne({email: _message[1]})
+
+                        botLogs(bot, `Το hash \`Hash: ${_message[1]}\` αφαιρέθηκε από την db.`)
+                    }
+                }
+            }
+
             if(msg.channel.name === `register-${msg.author.id}`){
                 const verificationCode = await nanoid();
 
@@ -34,14 +87,15 @@ module.exports = {
 
                 switch (registration.step){
                     case "sendEmail":
-                        botLogs(bot, `Ο χρήστης <@${msg.author.id}> έστειλε το εξής mail για εγγραφή.`)
-
-                        let tester = new RegExp("th[0-9]+@edu.hmu.gr$");
+                                let tester = new RegExp("th[0-9]+@edu.hmu.gr$");
                                 if(tester.test(msg.content)) {
                                     let hashedEmail = sha256().update(msg.content).digest('hex')
+
+                                    botLogs(bot, `Ο χρήστης <@${msg.author.id}> έστειλε το εξής mail για εγγραφή: \`\`\`Hash: ${hashedEmail}\`\`\``)
+
                                     let exists = await db.collection("usedEmails").findOne({email: hashedEmail})
                                     if(exists){
-                                        botLogs(bot, `Το ${msg.content} έχει ήδη χρησιμοποιηθεί για εγγραφή. Αναγνωριστικό για αφαίρεση απο db: ${hashedEmail}.`)
+                                        botLogs(bot, `Το ${msg.content} έχει ήδη χρησιμοποιηθεί για εγγραφή. Αναγνωριστικό για αφαίρεση απο db: \`\`\`${hashedEmail}\`\`\``)
                                         channel.send(`Αυτό το email έχει ήδη χρησιμοποιηθεί για εγγραφή στο Steki. Αν θεωρείς ότι έχει γίνει κάποιο λάθος, στείλε ένα μήνυμα στο <#939177847933780018>. \n\`Αναγνωριστικό Email: ${hashedEmail}\``);
                                         return;
                                     }
@@ -63,7 +117,7 @@ module.exports = {
                                             if(err){
                                                 console.log(err);
                                                 channel.send("Υπήρξε ένα σφάλμα. Παρακαλώ προσπάθησε αργότερα...");
-                                                botLogs(bot, `Κατά την αποστολή email στον <@${msg.author.id}> προέκυψε σφάλμα. Now the fun begins...`)
+                                                botLogs(bot, `Κατά την αποστολή email στον <@${msg.author.id}> προέκυψε σφάλμα το. Now the fun begins...\n \`\`\`${err}\`\`\``)
                                                 return;
                                             }
                                             registration.step = "verifyEmail";
