@@ -1,4 +1,4 @@
-const {smtp_password,salt} = require('../Configs/botconfig.json')
+const {smtp_password,salt, mailgun_apitok} = require('../Configs/botconfig.json')
 const discord = require('discord.js')
 const config = require('../Managers/configManager')()
 const {SMTPClient} = require("emailjs")
@@ -14,6 +14,13 @@ const mongo = require("../Classes/Database")
 const botLogs = require("../Utils/botLogs")
 let db = mongo.db("steki")
 process.env["NODE_TLS_REJECT_UNAUTHORIZED"] = 0;
+
+var mailgun = require('mailgun-js')({
+    apiKey: mailgun_apitok,
+    domain: 'poiw.org',
+    host: "api.eu.mailgun.net"
+});
+
 module.exports = {
     name: "message",
     execute: async(bot) => {
@@ -32,7 +39,7 @@ module.exports = {
                         let hashedEmail = sha256().update(_message[1]).digest('hex')
                         let exists = await db.collection("usedEmails").findOne({email: hashedEmail})
                         if(exists) return botLogs(bot, `Αυτό το email υπάρχει ήδη στην db.`)
-                        
+
                         await mongo.db("steki").collection("usedEmails").insertOne({
                             email: hashedEmail
                         })
@@ -49,7 +56,7 @@ module.exports = {
                         let hashedEmail = sha256().update(_message[1]).digest('hex')
                         let exists = await db.collection("usedEmails").findOne({email: hashedEmail})
                         if(!exists) return botLogs(bot, `Αυτό το email δεν υπάρχει στην db.`)
-                        
+
                         await mongo.db("steki").collection("usedEmails").deleteOne({
                             email: hashedEmail
                         })
@@ -65,7 +72,7 @@ module.exports = {
 
                         let exists = await db.collection("usedEmails").findOne({email: _message[1]})
                         if(!exists) return botLogs(bot, `Αυτό το hash δεν υπάρχει στην db.`)
-                        
+
                         await mongo.db("steki").collection("usedEmails").deleteOne({email: _message[1]})
 
                         botLogs(bot, `Το hash \`Hash: ${_message[1]}\` αφαιρέθηκε από την db.`)
@@ -100,36 +107,31 @@ module.exports = {
                                         return;
                                     }
                                     channel.send("Δώσε μου μισό λεπτάκι...")
-                                    const client = new SMTPClient({
-                                        user: 'steki@poiw.org',
-                                        password: smtp_password,
-                                        host: 'server.mail.poiw.org',
-                                        ssl: true,
-                                        timeout: 99999999999999999999999999
-                                    });
-                                    client.send(
-                                        {
-                                            text: `Ο κωδικός εγγραφής σου στο Steki είναι: ${verificationCode}\n\nΜΗΝ ΤΟ ΔΩΣΕΙΣ ΣΕ ΚΑΝΕΝΑ ΑΛΛΟ ΦΟΙΤΗΤΗ/ΙΑ, ΦΙΛΟ/Η ΣΟΥ, ΜΕΛΟΣ ΔΕΠ Ή ΓΕΝΙΚΑ ΟΠΟΙΟΔΗΠΟΤΕ ΑΛΛΟ ΣΥΣΤΗΜΑ, ΠΕΡΑ ΑΠΟ ΤΟ STEKIBOT ΣΤΗ ΔΙΑΔΙΚΑΣΙΑ ΕΓΓΡΑΦΗΣ!`,
-                                            from: 'Steki <steki@poiw.org>',
-                                            to: `<${msg.content}>`,
-                                            subject: 'Εγγραφή στο Steki',
-                                        }, async (err, message) => {
-                                            if(err){
-                                                console.log(err);
-                                                channel.send("Υπήρξε ένα σφάλμα. Παρακαλώ προσπάθησε αργότερα...");
-                                                botLogs(bot, `Κατά την αποστολή email στον <@${msg.author.id}> προέκυψε σφάλμα το. Now the fun begins...\n \`\`\`${err}\`\`\``)
-                                                return;
-                                            }
-                                            registration.step = "verifyEmail";
-                                            registration.email = msg.content;
-                                            registration.encryptedVerificationCode = sha256().update((verificationCode+salt).toString()).digest('hex');
-                                            await updateRegistration(registration);
 
-                                            channel.send("Τέλεια! Τσέκαρε τα εισερχόμενά σου για ένα μήνυμα με θέμα *\"Εγγραφή στο Steki\"*");
-                                            botLogs(bot, `Ο χρήστης <@${msg.author.id}> έλαβε στο inbox του τον κωδικό εγγραφής \`\`\`Hash: ${registration.encryptedVerificationCode}\`\`\` .`)
-                                            setTimeout(()=>channel.send("Όταν το λάβεις, στείλε μου τον κωδικό εγγραφής εδώ."),500)
+
+                                    await mailgun.messages().send({
+                                        from: 'Steki <steki@poiw.org>',
+                                        to: msg.content,
+                                        subject: 'Εγγραφή στο Steki',
+                                        text: `Ο κωδικός εγγραφής σου στο Steki είναι: ${verificationCode}\n\nΜΗΝ ΤΟ ΔΩΣΕΙΣ ΣΕ ΚΑΝΕΝΑ ΑΛΛΟ ΦΟΙΤΗΤΗ/ΙΑ, ΦΙΛΟ/Η ΣΟΥ, ΜΕΛΟΣ ΔΕΠ Ή ΓΕΝΙΚΑ ΟΠΟΙΟΔΗΠΟΤΕ ΑΛΛΟ ΣΥΣΤΗΜΑ, ΠΕΡΑ ΑΠΟ ΤΟ STEKIBOT ΣΤΗ ΔΙΑΔΙΚΑΣΙΑ ΕΓΓΡΑΦΗΣ!`
+                                    },
+                                    async function (err, message) {
+                                        if(err){
+                                            console.log(err);
+                                            channel.send("Υπήρξε ένα σφάλμα. Παρακαλώ προσπάθησε αργότερα...");
+                                            botLogs(bot, `Κατά την αποστολή email στον <@${msg.author.id}> προέκυψε σφάλμα το. Now the fun begins...\n \`\`\`${err}\`\`\``)
+                                            return;
                                         }
-                                    );
+                                        registration.step = "verifyEmail";
+                                        registration.email = msg.content;
+                                        registration.encryptedVerificationCode = sha256().update((verificationCode+salt).toString()).digest('hex');
+                                        await updateRegistration(registration);
+
+                                        channel.send("Τέλεια! Τσέκαρε τα εισερχόμενά σου για ένα μήνυμα με θέμα *\"Εγγραφή στο Steki\"*");
+                                        botLogs(bot, `Ο χρήστης <@${msg.author.id}> έλαβε στο inbox του τον κωδικό εγγραφής \`\`\`Hash: ${registration.encryptedVerificationCode}\`\`\` .`)
+                                        setTimeout(()=>channel.send("Όταν το λάβεις, στείλε μου τον κωδικό εγγραφής εδώ."),500)
+                                    });
+
 
                                 }else{
                                     botLogs(bot, `Ο χρήστης <@${msg.author.id}> έστειλε κάτι το οποίο δεν μοιάζει με email από το ΗΜΜΥ.`)
@@ -151,8 +153,8 @@ module.exports = {
                             member.roles.add("886993717725102103")
                             await completeRegistration(channel, registration)
                             botLogs(bot, `Ο χρήστης <@${msg.author.id}> ολοκλήρωσε με επιτυχία την εγγραφή του.`)
-                            
-                            
+
+
 
                         }else{
                             if(registration.failedAttempts > 2 || ! registration.encryptedVerificationCode){
