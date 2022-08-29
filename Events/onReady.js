@@ -1,6 +1,7 @@
 const fetchMessages = require('../Managers/MessageFetcher')
 const embedSetupSupport = require('../EmbedSetups/supportChatEmbedSetup')
 const embedSetupBeta = require('../EmbedSetups/betatestChatEmbedSetup')
+const { resolve } = require('path')
 const activities = [
     "dead",
     "with your academic data",
@@ -20,6 +21,31 @@ module.exports = {
                 embedSetupSupport.setup(bot)
                 embedSetupBeta.setup(bot)
             })
+
+            let i = 0
+            let instance
+
+            let getUsers = () => new Promise(resolve => {
+                bot.guilds.cache.forEach(async guild => {
+                    resolve(guild.roles.cache.get("886993717725102103").members.size)
+                });
+            })
+
+
+
+            setInterval(async ()=>{
+                if(instance) clearInterval(instance)
+
+                if(i === 0) instance = setInterval(() => bot.user.setActivity(`Επεξεργασμένα μηνύματα: ${process.env.processedMessages || 0}`), 1000)
+                else if(i === 1) bot.user.setActivity(`Μέλη στον σέρβερ: ${await getUsers()}`)
+                else if(i === 2) instance = setInterval(() => bot.user.setActivity(`Κακόβουλα μηνύματα που έχουν μπλοκαριστεί: ${process.env.blockedMessages || 0}`), 1000)
+
+
+                if(i < 2) i++
+                else i = 0
+
+            },10000)
+
 
 
 
