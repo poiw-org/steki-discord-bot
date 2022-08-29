@@ -1,4 +1,4 @@
-
+process.env.GOOGLE_APPLICATION_CREDENTIALS = "./gkeys.json"
 
 const Sentry = require("@sentry/node");
 // or use es6 import statements

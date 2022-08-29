@@ -1,31 +1,33 @@
-const {smtp_password,salt, mailgun_apitok} = require('../Configs/botconfig.json')
-const discord = require('discord.js')
+const {salt, mailgun_apitok, urls} = require('../Configs/botconfig.json')
 const config = require('../Managers/configManager')()
-const {SMTPClient} = require("emailjs")
-const error = require('../Utils/error')
-const path = require('path')
-const request = require(`request`);
-const fs = require(`fs`);
-const emojis = require('../Configs/emojis.json')
 const {sha256} = require("hash.js")
 const { customAlphabet } = require('nanoid/async')
 const nanoid = customAlphabet('1234567890', 6)
 const mongo = require("../Classes/Database")
 const botLogs = require("../Utils/botLogs")
 let db = mongo.db("steki")
-process.env["NODE_TLS_REJECT_UNAUTHORIZED"] = 0;
-
+let generalUtils = require("../Utils/generalUtils")
 var mailgun = require('mailgun-js')({
     apiKey: mailgun_apitok,
     domain: 'poiw.org',
     host: "api.eu.mailgun.net"
 });
 
+
+
 module.exports = {
     name: "message",
     execute: async(bot) => {
+
+        await mongo.connect();
+
+
         bot.on('message', async (msg, user) => {
-            await mongo.connect();
+            msg = await linkCheck(msg, bot).catch(e=>{
+                console.log(e);
+             })
+            if(!msg) return;
+
             let channel = msg.channel;
             if(channel.id == "939180081857839174"){
                 let author = msg.guild.members.cache.get(msg.author.id)
@@ -127,7 +129,7 @@ module.exports = {
                                         registration.encryptedVerificationCode = sha256().update((verificationCode+salt).toString()).digest('hex');
                                         await updateRegistration(registration);
 
-                                        channel.send("Τέλεια! Τσέκαρε τα εισερχόμενά σου για ένα μήνυμα με θέμα *\"Εγγραφή στο Steki\"*");
+                                        channel.send("Τέλεια! Τσέκαρε τα εισερχόμενά σου (https://webmail.edu.hmu.gr) για ένα μήνυμα με θέμα *\"Εγγραφή στο Steki\"*");
                                         botLogs(bot, `Ο χρήστης <@${msg.author.id}> έλαβε στο inbox του τον κωδικό εγγραφής \`\`\`Hash: ${registration.encryptedVerificationCode}\`\`\` .`)
                                         setTimeout(()=>channel.send("Όταν το λάβεις, στείλε μου τον κωδικό εγγραφής εδώ."),500)
                                     });
@@ -173,25 +175,7 @@ module.exports = {
                 }
 
             }
-            // parseMiddleware(msg,bot)
-            // let message = msg.content
-            // if(!message.startsWith(prefix)) return
-            // let args = message.slice(prefix.length).trim().split(' ')
-            // let cmdName = args.shift().toLowerCase()
-            // let commandToExecute = bot.commands.get(cmdName) || Array.from(bot.commands.values()).find(cmdFile => cmdFile.aliases && cmdFile.aliases.map(alias => alias.toLowerCase()).includes(cmdName.toLowerCase()))
-            // if(commandToExecute){
-            //     msg.delete()
-            //     let permissions = db.has("Permissions") ? db.get("Permissions") : {}
-            //     if(!permissions[msg.author.id]){
-            //         db.set(`Permissions.${msg.author.id}`,{perm:1})
-            //     }
-            //     let userPerm = db.has(`Permissions.${msg.author.id}`) ? db.get(`Permissions.${msg.author.id}`).perm : 1
-            //     if(userPerm >=  commandToExecute.permission){
-            //         commandToExecute.execute(bot,msg,args)
-            //     }else{
-            //         error.send(bot,msg.channel,"You dont have permission to do that")
-            //     }
-            // }
+
         })
     }
 }
@@ -211,4 +195,60 @@ let completeRegistration = async (channel, registration) => {
     }catch (e) {
         console.log(e)
     }
+}
+
+async function linkCheck(msg, bot){
+    if(!msg) return
+    if(msg.author.bot) return msg
+
+    var expression = /(https?:\/\/(?:www\.|(?!www))[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|www\.[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|https?:\/\/(?:www\.|(?!www))[a-zA-Z0-9]+\.[^\s]{2,}|www\.[a-zA-Z0-9]+\.[^\s]{2,})/gi;
+    var regex = new RegExp(expression);
+
+    let sentence_links = msg.content.split(regex).filter(word=> regex.test(word))
+
+
+    if(sentence_links.some(link => urls.blacklist.some(blacklistedLink => link.includes(blacklistedLink)))){
+        if(msg.attachments.length == sentence_links.length) return;
+
+        msg.author.send(`<@${msg.author.id}> Το τελευταίο σου μήνυμα:\`\`\` ${msg.content}\`\`\`περιέχει συνδέσμους με μη επιτρεπτές λέξεις. Γι' αυτό, το μήνυμά σου διαγράφτηκε και έγινε καταγραφή του συμβάντος από την Ομάδα Διαχείρισης. Λόγω εξάρσεων επιθέσεων spam σε servers του Discord, δεν προχωρήσαμε σε ban του λογαριασμού σου. Αν παρατηρηθεί εκτεταμένη ζημιά ή ότι έκανες εκούσια spam, θα αφαιρεθείς μόνιμα από τον server. \n **Αν δεν έστειλες εσύ το μήνυμα, άλλαξε κωδικό άμεσα και ενεργοποίησε 2FA!**`)
+        botLogs(bot, `Στο κανάλι ${msg.channel}, ο χρήστης <@${msg.author.id}> έστειλε σύνδεσμο με μη επιτρεπτές λέξεις: \`\`\` ${msg.content}\`\`\``)
+        msg.delete();
+        return;
+    }
+
+
+    let isSafeArray = (await Promise.all(sentence_links.map(link => generalUtils.isLinkSafeGoogle(link)))).map(array => {
+        let {threat} = array[0]
+        return threat ? threat : null
+    })
+
+
+    if(isSafeArray.some(item=> item != null)){
+        msg.delete()
+        let threats = []
+        sentence_links.forEach(link => {
+            if(isSafeArray[sentence_links.indexOf(link)] != null){
+                threats.push(Object.assign({},isSafeArray[sentence_links.indexOf(link)],{link: link}))
+            }
+        })
+
+        msg.author.send(`<@${msg.author.id}> Στο τελευταίο σου μήνυμα:\`\`\` ${msg.content}\`\`\`εντοπίσαμε γνωστούς κακόβουλους συνδέσμους. Λόγω εξάρσεων επιθέσεων spam σε servers του Discord, διαγράψαμε το μήνυμά σου αυτόματα, χωρίς να προχωρίσουμε σε ban. Αν παρατηρηθεί εκτεταμένη ζημιά ή ότι έκανες εκούσια spam, θα αφαιρεθείς μόνιμα από τον server. \n\n **Αν δεν έστειλες εσύ το μήνυμα, άλλαξε κωδικό άμεσα και ενεργοποίησε 2FA!**`)
+
+        botLogs(bot, `Εντοπίστηκε κακόβουλος σύνδεσμος από <@${msg.author.id}> στο ${msg.channel}\n\n Κατηγορίες απειλής: \n ${threats.map(threat=> `**${threat["link"]}** => \`\`${threat["threatTypes"][0]}\`\`\n`).join("")}`)
+
+        return false
+    }
+
+    if(sentence_links.length > 0){
+
+        if((sentence_links.filter(link => urls.whitelist.some(whitelistedLink => link.startsWith(`https://${whitelistedLink}`))).length === sentence_links.length)) return;
+
+        if(msg.embeds.length == sentence_links.length) return;
+
+
+        msg.react("⚠️");
+        msg.channel.send(`⚠️: Παρ' ότι οι συνδέσμοι του μηνύματος του/ης <@${msg.author.id}> ελέγχθηκαν αυτόματα για γνωστές απειλές, να έχετε τα μάτια σας δεκατέσσερα για τυγχόν phishing ή malware.`);
+    }
+
+    return msg
 }

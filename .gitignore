@@ -110,3 +110,4 @@ json.sqlite
 json.sqlite
 *.sqlite
 Classes/Configs/botconfig.json
+gkeys.json

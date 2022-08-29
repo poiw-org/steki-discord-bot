@@ -1,3 +1,10 @@
+let {vt_token} = require("../Configs/botconfig.json")
+
+const {WebRiskServiceClient} = require('@google-cloud/web-risk');
+const client = new WebRiskServiceClient();
+
+const sdk = require('api')('@virustotal/v3.0#1k2godhyl0v06jsw');
+
 module.exports = {
     chunk_inefficient_sorted: (chunkSize,sortElement,objectArray)=>{
       objectArray =  objectArray.sort((a,b)=> {
@@ -21,5 +28,23 @@ module.exports = {
             })
         )
         return objectArray
+    },
+
+    isLinkSafeGoogle: async (link)=>{
+        return new Promise(async (resolve,reject) => {
+            const request = {
+                uri: link,
+                threatTypes: ['MALWARE', 'SOCIAL_ENGINEERING', 'UNWANTED_SOFTWARE']
+            };
+
+            // call the WebRisk searchUris API.
+            const threat = await client.searchUris(request);
+            if (threat) {
+                resolve(threat)
+            } else {
+                resolve(null)
+            }
+
+        })
     }
 }

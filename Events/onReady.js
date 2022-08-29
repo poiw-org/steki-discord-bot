@@ -1,12 +1,6 @@
-const discord = require('discord.js')
 const fetchMessages = require('../Managers/MessageFetcher')
 const embedSetupSupport = require('../EmbedSetups/supportChatEmbedSetup')
 const embedSetupBeta = require('../EmbedSetups/betatestChatEmbedSetup')
-// const saffron = require("@poiw/saffron")
-const schedule = require('node-schedule');
-const config = require("../Configs/botconfig.json")
-const {NodeHtmlMarkdown} =  require("node-html-markdown")
-const truncate = require('truncate');
 const activities = [
     "dead",
     "with your academic data",
@@ -19,62 +13,15 @@ module.exports = {
     name: "ready",
     execute: async (bot) => {
         bot.on('ready', async () => {
-            
+
             fetchMessages.fetch(bot).then(fetchedMessages =>{
                 let loaded = fetchedMessages.reduce((a, b) => a + b, 0)
                 console.log(`Successfully fetched ${loaded} Messages`)
                 embedSetupSupport.setup(bot)
                 embedSetupBeta.setup(bot)
             })
-            
-   
-            // Προωθήσεις: 887068592363950100
-            // System: 887044231963770901
 
-            // schedule.scheduleJob('0 10 * * 6', function(){
-            //     bot.channels.fetch("887068592363950100").then(channel=>{
-            //         // channel.send("Σήμερον η διάθεση είναι: γενική φασίνα στο σπίτι, ακούγοντας τα κλαμπατσίμπανα της βλαχάρας στο <#894205634482954270>. Εμπρός! (*ΣΑΑΑΚΗΗΗΗΗΗΗΗΗΗΗΗΗΗ*)")
-            //     })
-            //   });
-            
-            // schedule.scheduleJob('0 18 * * 1,3,5', function(){
-            //     bot.channels.fetch("887068592363950100").then(channel=>{
-            //             channel.send("Είναι ήδη έξι το βράδυ και ώρα να στροθούμε στο διάβασμα! Το πτυχίο δεν λαμβάνεται δια μέσω βαρεμάρας φίλτατοι. Σι γιού ατ <#887342520651087973> μπίτσεζ... :wink: ")
-            //     })
-            //   });
 
-                // await saffron.initialize({ 
-                //     mode: "main",
-                //     database:{
-                //         driver: "mongodb",
-                //         config: {
-                //             url: config.saffron_db, // The mongodb url
-                //           }
-                //     },
-                //     scheduler: {
-                //         intervalBetweenJobs: 1000,
-                //         heavyJobFailureInterval: 120000,
-                //     },
-                //     sources:{
-                //         "path": "/sources",
-                //         "excluded": []
-                //       }
-                // })
-                
-                // await saffron.start()
-
-                // saffron.on("workers.articles.new", async articles => {
-                //     for(let article of articles){
-                //         article.content = NodeHtmlMarkdown.translate(article.content.trim());
-                //         config.secretary_channels[article.source.name].forEach(channel=>{
-                //             bot.channels.fetch(channel).then(channel=>{
-                //                 channel.send(`**${article.title}**\n\n${truncate(article.content,1000)}\n\n**Διάβασε την ανακοίνωση εδώ: ${article.link}**`)
-                //             })
-                //         })
-                //     }
-                //     return articles
-                // })
-   
 
             bot.channels.fetch("886981920108478526").then(channel=>{
                 setInterval(() => {
@@ -95,7 +42,7 @@ module.exports = {
                                     "\n" +
                                     "Έχε υπόψη ότι είμαι απλά ένα πρόγραμμα. Με έχουν προγραμματίσει να σε σπαμάρω μέχρι να γραφτείς στον σέρβερ. Αν θες να σταματήσω, δεν έχεις παρά να βγείς από τον σέρβερ, πατώντας δεξί κλικ (ή παρατεταμένα πάνω) στο εικονίδιο του σέρβερ και \"Leave Server\"")
                                 })
-        
+
                             }
                         });
                     }catch(e){
