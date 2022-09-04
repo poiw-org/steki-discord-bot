@@ -4,13 +4,12 @@ const embedSetupBeta = require('../EmbedSetups/betatestChatEmbedSetup')
 const { joinVoiceChannel, createAudioPlayer, createAudioResource, AudioPlayerStatus, VoiceConnectionStatus } = require('@discordjs/voice');
 require('ffmpeg-inject');
 const IceParser = require("../Utils/IceParser")
+const axios = require("axios");
 
 module.exports = {
     name: "ready",
     execute: async (bot) => {
         bot.on('ready', async () => {
-
-
             function playMusic() {
                 try{
                     let channel = bot.channels.cache.get("1015948363197321309");
@@ -44,7 +43,6 @@ module.exports = {
 
                     })
 
-
                 }catch (e) {
                     console.log(e)
                 }
@@ -72,6 +70,8 @@ module.exports = {
 
 
             setInterval(async ()=>{
+                findNewArticles(bot)
+
                 if(instance) clearInterval(instance)
 
                 if(i === 0) instance = setInterval(() => bot.user.setActivity(`Επεξεργασμένα μηνύματα: ${process.env.processedMessages || 0}`), 1000)
@@ -116,5 +116,24 @@ module.exports = {
 
         })
 
+    }
+}
+
+
+async function findNewArticles(bot){
+
+    try {
+        let announcementsChannel = await bot.channels.fetch("905200037573824592");
+
+        let {data} = await axios.get("https://ece.hmu.gr/wp-json/wp/v2/posts/")
+
+        let latestArticle = data[0];
+
+        if(announcementsChannel.topic != latestArticle.id){
+            await announcementsChannel.setTopic(latestArticle.id)
+            announcementsChannel.send(`@everyone Νέα ανακοίνωση από γραμματεία: **"${latestArticle.title.rendered.trim()}"** \n\nΔιάβασέ το εδώ: ${latestArticle.link}`)
+        }
+    }catch (e) {
+        console.log(e)
     }
 }
