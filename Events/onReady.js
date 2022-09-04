@@ -10,22 +10,41 @@ module.exports = {
     name: "ready",
     execute: async (bot) => {
         bot.on('ready', async () => {
+
+            let radioChannel = bot.channels.cache.get("1015948363197321309");
+
+            let connection = joinVoiceChannel({
+                channelId: radioChannel.id,
+                guildId: radioChannel.guild.id,
+                adapterCreator: radioChannel.guild.voiceAdapterCreator,
+                selfDeaf: false,
+                selfMute: false
+            });
+
+
+            const player = createAudioPlayer();
+
+            player.on(AudioPlayerStatus.Paused, () => playMusic())
+            player.on(AudioPlayerStatus.AutoPaused, () => playMusic())
+            player.on(AudioPlayerStatus.Idle, () => playMusic())
+
+            connection.on(VoiceConnectionStatus.Ready, () => playMusic())
+            connection.on(VoiceConnectionStatus.Destroyed, () => {
+                connection = joinVoiceChannel({
+                    channelId: radioChannel.id,
+                    guildId: radioChannel.guild.id,
+                    adapterCreator: radioChannel.guild.voiceAdapterCreator,
+                    selfDeaf: false,
+                    selfMute: false
+                });
+            })
+            connection.on(VoiceConnectionStatus.Disconnected, async () => {
+                connection.rejoin();
+            })
+
             function playMusic() {
                 try{
-                    let channel = bot.channels.cache.get("1015948363197321309");
-
                     let radio = new IceParser("http://fm1.hmu.gr:8000/live");
-
-                    const connection = joinVoiceChannel({
-                        channelId: channel.id,
-                        guildId: channel.guild.id,
-                        adapterCreator: channel.guild.voiceAdapterCreator,
-                        selfDeaf: false,
-                        selfMute: false
-                    });
-
-
-                    const player = createAudioPlayer();
                     connection.subscribe(player);
                     radio.on("stream", stream => {
                         let resource = createAudioResource(stream,{
@@ -33,23 +52,11 @@ module.exports = {
                         });
                         resource.volume.setVolume(1.5);
                         player.play(resource)
-
-                        player.on(AudioPlayerStatus.Paused, () => playMusic())
-                        player.on(AudioPlayerStatus.AutoPaused, () => playMusic())
-                        player.on(AudioPlayerStatus.Idle, () => playMusic())
-
-                        connection.on(VoiceConnectionStatus.Destroyed, () => playMusic())
-                        connection.on(VoiceConnectionStatus.Disconnected, () => playMusic())
-
                     })
-
                 }catch (e) {
                     console.log(e)
                 }
-
             }
-
-            playMusic();
 
             fetchMessages.fetch(bot).then(fetchedMessages =>{
                 let loaded = fetchedMessages.reduce((a, b) => a + b, 0)
@@ -63,7 +70,9 @@ module.exports = {
 
             let getUsers = () => new Promise(resolve => {
                 bot.guilds.cache.forEach(async guild => {
-                    resolve(guild.roles.cache.get("886993717725102103").members.size)
+                    resolve(
+                        guild.roles.cache.get("886993717725102103").members.size + guild.roles.cache.get("993612908074381352").members.size
+                    )
                 });
             })
 
