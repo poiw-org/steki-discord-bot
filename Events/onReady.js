@@ -1,20 +1,17 @@
 const fetchMessages = require('../Managers/MessageFetcher')
 const embedSetupSupport = require('../EmbedSetups/supportChatEmbedSetup')
 const embedSetupBeta = require('../EmbedSetups/betatestChatEmbedSetup')
-const { resolve } = require('path')
-const activities = [
-    "dead",
-    "with your academic data",
-    "\"Pistevw pws tha perasw mageiropoulo\" Simulator 2022",
-    "pws kanw print stin python?",
-    "--insert funny joke here--",
-]
+const { joinVoiceChannel, createAudioPlayer, createAudioResource, StreamType } = require('@discordjs/voice');
+require('ffmpeg-inject');
+const IceParser = require("../Utils/IceParser")
 
 module.exports = {
     name: "ready",
     execute: async (bot) => {
         bot.on('ready', async () => {
 
+            let fm1Channel = bot.channels.cache.get("1015948363197321309");
+            playMusic(fm1Channel, "http://fm1.hmu.gr:8000/live", 200)
             fetchMessages.fetch(bot).then(fetchedMessages =>{
                 let loaded = fetchedMessages.reduce((a, b) => a + b, 0)
                 console.log(`Successfully fetched ${loaded} Messages`)
@@ -79,6 +76,35 @@ module.exports = {
             })
 
         })
+
     }
 }
 
+function playMusic(channel, track, volume) {
+    try{
+        let radio = new IceParser(track);
+
+        const connection = joinVoiceChannel({
+            channelId: channel.id,
+            guildId: channel.guild.id,
+            adapterCreator: channel.guild.voiceAdapterCreator,
+            selfDeaf: false,
+            selfMute: false
+        });
+
+
+        const player = createAudioPlayer();
+        connection.subscribe(player);
+        radio.on("stream", stream => {
+            let resource = createAudioResource(stream,{
+                inlineVolume: true
+            });
+            resource.volume.setVolume(volume/100);
+            player.play(resource)
+
+        })
+    }catch (e) {
+        console.log(e)
+    }
+
+}
