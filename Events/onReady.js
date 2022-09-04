@@ -1,7 +1,7 @@
 const fetchMessages = require('../Managers/MessageFetcher')
 const embedSetupSupport = require('../EmbedSetups/supportChatEmbedSetup')
 const embedSetupBeta = require('../EmbedSetups/betatestChatEmbedSetup')
-const { joinVoiceChannel, createAudioPlayer, createAudioResource, StreamType } = require('@discordjs/voice');
+const { joinVoiceChannel, createAudioPlayer, createAudioResource, AudioPlayerStatus, VoiceConnectionStatus } = require('@discordjs/voice');
 require('ffmpeg-inject');
 const IceParser = require("../Utils/IceParser")
 
@@ -10,8 +10,49 @@ module.exports = {
     execute: async (bot) => {
         bot.on('ready', async () => {
 
-            let fm1Channel = bot.channels.cache.get("1015948363197321309");
-            playMusic(fm1Channel, "http://fm1.hmu.gr:8000/live", 200)
+
+            function playMusic() {
+                try{
+                    let channel = bot.channels.cache.get("1015948363197321309");
+
+                    let radio = new IceParser("http://fm1.hmu.gr:8000/live");
+
+                    const connection = joinVoiceChannel({
+                        channelId: channel.id,
+                        guildId: channel.guild.id,
+                        adapterCreator: channel.guild.voiceAdapterCreator,
+                        selfDeaf: false,
+                        selfMute: false
+                    });
+
+
+                    const player = createAudioPlayer();
+                    connection.subscribe(player);
+                    radio.on("stream", stream => {
+                        let resource = createAudioResource(stream,{
+                            inlineVolume: true
+                        });
+                        resource.volume.setVolume(1.5);
+                        player.play(resource)
+
+                        player.on(AudioPlayerStatus.Paused, () => playMusic())
+                        player.on(AudioPlayerStatus.AutoPaused, () => playMusic())
+                        player.on(AudioPlayerStatus.Idle, () => playMusic())
+
+                        connection.on(VoiceConnectionStatus.Destroyed, () => playMusic())
+                        connection.on(VoiceConnectionStatus.Disconnected, () => playMusic())
+
+                    })
+
+
+                }catch (e) {
+                    console.log(e)
+                }
+
+            }
+
+            playMusic();
+
             fetchMessages.fetch(bot).then(fetchedMessages =>{
                 let loaded = fetchedMessages.reduce((a, b) => a + b, 0)
                 console.log(`Successfully fetched ${loaded} Messages`)
@@ -48,8 +89,6 @@ module.exports = {
 
             bot.channels.fetch("886981920108478526").then(channel=>{
                 setInterval(() => {
-                    const index = Math.floor(Math.random() * (activities.length - 1) + 1)
-                    bot.user.setActivity(activities[index])
 
                     try{
                         bot.channels.cache.forEach(channel=>{
@@ -78,33 +117,4 @@ module.exports = {
         })
 
     }
-}
-
-function playMusic(channel, track, volume) {
-    try{
-        let radio = new IceParser(track);
-
-        const connection = joinVoiceChannel({
-            channelId: channel.id,
-            guildId: channel.guild.id,
-            adapterCreator: channel.guild.voiceAdapterCreator,
-            selfDeaf: false,
-            selfMute: false
-        });
-
-
-        const player = createAudioPlayer();
-        connection.subscribe(player);
-        radio.on("stream", stream => {
-            let resource = createAudioResource(stream,{
-                inlineVolume: true
-            });
-            resource.volume.setVolume(volume/100);
-            player.play(resource)
-
-        })
-    }catch (e) {
-        console.log(e)
-    }
-
 }
