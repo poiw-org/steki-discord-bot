@@ -6,21 +6,21 @@ require('ffmpeg-inject');
 const IceParser = require("../Utils/IceParser")
 const axios = require("axios");
 const botLogs = require('../Utils/botLogs')
+const {GuildScheduledEventEntityTypes, GuildScheduledEventPrivacyLevels} = require("discord.js");
 module.exports = {
     name: "ready",
     execute: async (bot) => {
         bot.on('ready', async () => {
 
-            let radioChannel = bot.channels.cache.get("1015948363197321309");
+            let radioChannel = bot.channels.cache.get("1016233975880089701");
 
-            let connection = joinVoiceChannel({
+            let connection = await joinVoiceChannel({
                 channelId: radioChannel.id,
                 guildId: radioChannel.guild.id,
                 adapterCreator: radioChannel.guild.voiceAdapterCreator,
                 selfDeaf: false,
                 selfMute: false
             });
-
 
             const player = createAudioPlayer();
 
@@ -51,10 +51,28 @@ module.exports = {
                             inlineVolume: true
                         });
                         resource.volume.setVolume(1.5);
-                        player.play(resource)
+                        player.play(resource);
+
+                        radioChannel.guild.scheduledEvents.create({
+                            name: "Studio Fm1 - Ραδιοφωνικός Σταθμός Φοιτητών ΕΛΜΕΠΑ Ηρακλείου",
+                            scheduledStartTime: new Date().setSeconds(new Date().getSeconds() + 3),
+                            channel: radioChannel,
+                            entityType: "STAGE_INSTANCE",
+                            privacyLevel: "GUILD_ONLY"
+                        }).then(event =>{
+                            event.setStatus("ACTIVE")
+                        })
+
+                        radioChannel.guild.me.voice.setSuppressed(false);
+
                     })
                     radio.on("error", (error) => {
-                        botLogs(bot, `<#1015948363197321309>: Πάλι είναι κάτω ο φμ1;;; λ ο λ (${error.message})`)
+                        radioChannel.guild.scheduledEvents.fetch(radioChannel.guildScheduledEventId)
+                            .then(event=>{
+                                if(!event) return;
+                                event.delete()
+                            })
+                        // botLogs(bot, `<#1016233975880089701>: Πάλι είναι κάτω ο φμ1;;; λ ο λ (${error.message})`)
                     });
                 }catch (e) {
                     console.log(e)
