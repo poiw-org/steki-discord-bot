@@ -5,7 +5,7 @@ const { joinVoiceChannel, createAudioPlayer, createAudioResource, AudioPlayerSta
 require('ffmpeg-inject');
 const IceParser = require("../Utils/IceParser")
 const axios = require("axios");
-
+const botLogs = require('../Utils/botLogs')
 module.exports = {
     name: "ready",
     execute: async (bot) => {
@@ -53,6 +53,9 @@ module.exports = {
                         resource.volume.setVolume(1.5);
                         player.play(resource)
                     })
+                    radio.on("error", (error) => {
+                        botLogs(bot, `<#1015948363197321309>: Πάλι είναι κάτω ο φμ1;;; λ ο λ (${error.message})`)
+                    });
                 }catch (e) {
                     console.log(e)
                 }
