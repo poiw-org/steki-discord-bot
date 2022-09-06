@@ -42,8 +42,18 @@ module.exports = {
                 connection.rejoin();
             })
 
+            function destroyRadioEvent() {
+                radioChannel.guild.scheduledEvents.fetch(radioChannel.guildScheduledEventId)
+                    .then(event=>{
+                        if(!event) return;
+                        event.delete()
+                    })
+            }
+
             function playMusic() {
                 try{
+                    destroyRadioEvent()
+
                     let radio = new IceParser("http://fm1.hmu.gr:8000/live");
                     connection.subscribe(player);
                     radio.on("stream", stream => {
@@ -67,12 +77,8 @@ module.exports = {
 
                     })
                     radio.on("error", (error) => {
-                        radioChannel.guild.scheduledEvents.fetch(radioChannel.guildScheduledEventId)
-                            .then(event=>{
-                                if(!event) return;
-                                event.delete()
-                            })
-                        // botLogs(bot, `<#1016233975880089701>: Πάλι είναι κάτω ο φμ1;;; λ ο λ (${error.message})`)
+                        destroyRadioEvent()
+                        botLogs(bot, `<#1016233975880089701>: Πάλι είναι κάτω ο φμ1;;; λ ο λ (${error.message})`)
                     });
                 }catch (e) {
                     console.log(e)
