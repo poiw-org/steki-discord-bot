@@ -1,4 +1,4 @@
-const {salt, mailgun_apitok, urls} = require('../Configs/botconfig.json')
+const {salt, mailgun_apitok, urls, pebblehost} = require('../Configs/botconfig.json')
 const config = require('../Managers/configManager')()
 const {sha256} = require("hash.js")
 const { customAlphabet } = require('nanoid/async')
@@ -7,6 +7,8 @@ const mongo = require("../Classes/Database")
 const botLogs = require("../Utils/botLogs")
 let db = mongo.db("steki")
 let generalUtils = require("../Utils/generalUtils")
+const pebblehostApi = require("../Utils/pebblehost")
+
 var mailgun = require('mailgun-js')({
     apiKey: mailgun_apitok,
     domain: 'poiw.org',
@@ -82,6 +84,10 @@ module.exports = {
                         await mongo.db("steki").collection("usedEmails").deleteOne({email: _message[1]})
 
                         botLogs(bot, `Το hash \`Hash: ${_message[1]}\` αφαιρέθηκε από την db.`)
+                    }
+                    if(msg.content.startsWith("rebootBot")){
+                        msg.delete()
+                        pebblehostApi("restartServer", {id: pebblehost.serverId }, pebblehost.user, pebblehost.key)
                     }
                 }
             }

@@ -7,12 +7,14 @@ const IceParser = require("../Utils/IceParser")
 const axios = require("axios");
 const botLogs = require('../Utils/botLogs')
 const {GuildScheduledEventEntityTypes, GuildScheduledEventPrivacyLevels} = require("discord.js");
+const {DateTime} = require("luxon")
+
 module.exports = {
     name: "ready",
     execute: async (bot) => {
         bot.on('ready', async () => {
 
-            let radioChannel = bot.channels.cache.get("1016233975880089701");
+            let radioChannel = await bot.channels.fetch("1016233975880089701");
 
             let connection = await joinVoiceChannel({
                 channelId: radioChannel.id,
@@ -42,18 +44,14 @@ module.exports = {
                 connection.rejoin();
             })
 
-            function destroyRadioEvent() {
-                radioChannel.guild.scheduledEvents.fetch(radioChannel.guildScheduledEventId)
-                    .then(event=>{
-                        if(!event) return;
-                        event.delete()
-                    })
+            async function destroyRadioEvent() {
+                let event = (await radioChannel.guild.scheduledEvents.fetch()).find(event => event.channelId === radioChannel.id)
+                await event.delete()
             }
 
-            function playMusic() {
+            async function playMusic() {
                 try{
-                    destroyRadioEvent()
-
+                    let event = (await radioChannel.guild.scheduledEvents.fetch()).find(event => event.channelId === radioChannel.id)
                     let radio = new IceParser("http://fm1.hmu.gr:8000/live");
                     connection.subscribe(player);
                     radio.on("stream", stream => {
@@ -63,22 +61,24 @@ module.exports = {
                         resource.volume.setVolume(1.5);
                         player.play(resource);
 
-                        radioChannel.guild.scheduledEvents.create({
-                            name: "Studio Fm1 - Ραδιοφωνικός Σταθμός Φοιτητών ΕΛΜΕΠΑ Ηρακλείου",
-                            scheduledStartTime: new Date().setSeconds(new Date().getSeconds() + 3),
-                            channel: radioChannel,
-                            entityType: "STAGE_INSTANCE",
-                            privacyLevel: "GUILD_ONLY"
-                        }).then(event =>{
-                            event.setStatus("ACTIVE")
-                        })
+                        if(!event){
+                            radioChannel.guild.scheduledEvents.create({
+                                name: "Studio Fm1 - Ραδιοφωνικός Σταθμός Φοιτητών ΕΛΜΕΠΑ Ηρακλείου",
+                                scheduledStartTime: DateTime.now().setZone('Europe/Athens').plus({minutes: 1}),
+                                channel: radioChannel,
+                                entityType: "STAGE_INSTANCE",
+                                privacyLevel: "GUILD_ONLY"
+                            }).then(event =>{
+                                event.setStatus("ACTIVE")
+                            })
+                        }
 
                         radioChannel.guild.me.voice.setSuppressed(false);
 
                     })
                     radio.on("error", (error) => {
                         destroyRadioEvent()
-                        botLogs(bot, `<#1016233975880089701>: Πάλι είναι κάτω ο φμ1;;; λ ο λ (${error.message})`)
+                        // botLogs(bot, `<#1016233975880089701>: Πάλι είναι κάτω ο φμ1;;; λ ο λ (${error.message})`)
                     });
                 }catch (e) {
                     console.log(e)
