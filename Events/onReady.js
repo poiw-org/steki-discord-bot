@@ -32,6 +32,7 @@ module.exports = {
 
             connection.on(VoiceConnectionStatus.Ready, () => playMusic())
             connection.on(VoiceConnectionStatus.Destroyed, () => {
+                radioChannel.setName("[OFFLINE]-hmu-radio")
                 connection = joinVoiceChannel({
                     channelId: radioChannel.id,
                     guildId: radioChannel.guild.id,
@@ -46,7 +47,7 @@ module.exports = {
 
             async function destroyRadioEvent() {
                 let event = (await radioChannel.guild.scheduledEvents.fetch()).find(event => event.channelId === radioChannel.id)
-                await event.delete()
+                if(event) await event.delete()
             }
 
             async function playMusic() {
@@ -60,10 +61,12 @@ module.exports = {
                         });
                         resource.volume.setVolume(1.5);
                         player.play(resource);
+                        radioChannel.setName("hmu-radio")
+                        radioChannel.setTopic("Studio FΜ1 - Σταθμός Φοιτητών ΕΛ.ΜΕ.ΠΑ. Ηρακλείου")
 
                         if(!event){
                             radioChannel.guild.scheduledEvents.create({
-                                name: "Studio Fm1 - Ραδιοφωνικός Σταθμός Φοιτητών ΕΛΜΕΠΑ Ηρακλείου",
+                                name: "Studio FΜ1 - Σταθμός Φοιτητών ΕΛ.ΜΕ.ΠΑ. Ηρακλείου",
                                 scheduledStartTime: DateTime.now().setZone('Europe/Athens').plus({minutes: 1}),
                                 channel: radioChannel,
                                 entityType: "STAGE_INSTANCE",
@@ -78,6 +81,9 @@ module.exports = {
                     })
                     radio.on("error", (error) => {
                         destroyRadioEvent()
+                        radioChannel.setTopic("Υπάρχει προσωρινό πρόβλημα στην αναμετάδοση του σταθμού.")
+                        radioChannel.setName("[OFFLINE]-hmu-radio")
+                        setTimeout(()=>playMusic(), 3600000)
                         // botLogs(bot, `<#1016233975880089701>: Πάλι είναι κάτω ο φμ1;;; λ ο λ (${error.message})`)
                     });
                 }catch (e) {
