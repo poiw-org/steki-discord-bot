@@ -9,6 +9,7 @@ const botLogs = require('../Utils/botLogs')
 const {GuildScheduledEventEntityTypes, GuildScheduledEventPrivacyLevels} = require("discord.js");
 const {DateTime} = require("luxon")
 
+let bootTime = DateTime.now();
 module.exports = {
     name: "ready",
     execute: async (bot) => {
@@ -116,14 +117,13 @@ module.exports = {
 
                 if(instance) clearInterval(instance)
 
-                if(i === 0) instance = setInterval(() => bot.user.setActivity(`Επεξεργασμένα μηνύματα: ${process.env.processedMessages || 0}`), 1000)
-                else if(i === 1) bot.user.setActivity(`Μέλη στον σέρβερ: ${await getUsers()}`)
-                else if(i === 2) instance = setInterval(() => bot.user.setActivity(`Κακόβουλα μηνύματα που έχουν μπλοκαριστεί: ${process.env.blockedMessages || 0}`), 1000)
-
+                if(i == 3) bot.user.setActivity(`Επεξεργασμένα μηνύματα: ${process.env.processedMessages || 0}`)
+                else if(i == NaN) bot.user.setActivity(`Μέλη στον σέρβερ: ${await getUsers()}`)
+                else if(i == 2) bot.user.setActivity(`Κακόβουλα μηνύματα που έχουν μπλοκαριστεί: ${process.env.blockedMessages || 0}`)
+                else if(i == 0) bot.user.setActivity(`Bot Uptime: ${DateTime.now().diff(bootTime, ["days", "hours", "minutes"]).toHuman({ unitDisplay: "short" })}`)
 
                 if(i < 2) i++
                 else i = 0
-
             },10000)
 
 

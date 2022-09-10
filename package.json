@@ -38,7 +38,7 @@
     "hash.js": "^1.1.7",
     "icecast-parser": "^4.0.2",
     "libsodium-wrappers": "^0.7.10",
-    "luxon": "^1.26.0",
+    "luxon": "^3.0.3",
     "mailgun-js": "^0.22.0",
     "mongodb": "^4.1.2",
     "nanoid": "^3.1.25",

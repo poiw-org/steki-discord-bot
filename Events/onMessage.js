@@ -267,6 +267,7 @@ async function linkCheck(msg, bot){
 
         if(msg.embeds.length == sentence_links.length) return;
 
+        console.log(msg)
 
         msg.react("⚠️");
         msg.channel.send(`⚠️: Παρ' ότι οι συνδέσμοι του μηνύματος του/ης <@${msg.author.id}> ελέγχθηκαν αυτόματα για γνωστές απειλές, να έχετε τα μάτια σας δεκατέσσερα για τυγχόν phishing ή malware.`);
