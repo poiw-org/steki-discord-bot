@@ -22,6 +22,8 @@ module.exports = {
     name: "message",
     execute: async(bot) => {
 
+
+
         await mongo.connect();
 
 
@@ -218,6 +220,9 @@ let completeRegistration = async (channel, registration) => {
 }
 
 async function linkCheck(msg, bot){
+    let {guild} = msg;
+    let member = guild.members.cache.get(msg.author.id);
+
     if(!msg) return
     if(msg.author.bot) return msg
 
@@ -230,8 +235,14 @@ async function linkCheck(msg, bot){
     if(sentence_links.some(link => urls.blacklist.some(blacklistedLink => link.includes(blacklistedLink)))){
         if(msg.attachments.length == sentence_links.length) return;
 
-        msg.author.send(`<@${msg.author.id}> Το τελευταίο σου μήνυμα:\`\`\` ${msg.content}\`\`\`περιέχει συνδέσμους με μη επιτρεπτές λέξεις. Γι' αυτό, το μήνυμά σου διαγράφτηκε και έγινε καταγραφή του συμβάντος από την Ομάδα Διαχείρισης. Λόγω εξάρσεων επιθέσεων spam σε servers του Discord, δεν προχωρήσαμε σε ban του λογαριασμού σου. Αν παρατηρηθεί εκτεταμένη ζημιά ή ότι έκανες εκούσια spam, θα αφαιρεθείς μόνιμα από τον server. \n **Αν δεν έστειλες εσύ το μήνυμα, άλλαξε κωδικό άμεσα και ενεργοποίησε 2FA!**`)
-        botLogs(bot, `Στο κανάλι ${msg.channel}, ο χρήστης <@${msg.author.id}> έστειλε σύνδεσμο με μη επιτρεπτές λέξεις: \`\`\` ${msg.content}\`\`\``)
+        msg.author.send(`<@${msg.author.id}> Το τελευταίο σου μήνυμα:\`\`\` ${msg.content}\`\`\`περιέχει συνδέσμους με μη επιτρεπτές λέξεις. Γι' αυτό, το μήνυμά σου διαγράφτηκε και έγινε καταγραφή του συμβάντος από την Ομάδα Διαχείρισης. Λόγω εξάρσεων επιθέσεων spam σε servers του Discord, σου εφαρμόστηκε προσωρινά timeout. Αν παρατηρηθεί εκτεταμένη ζημιά ή ότι έκανες εκούσια spam, θα αφαιρεθείς μόνιμα από τον server. \n **Αν δεν έστειλες εσύ το μήνυμα, άλλαξε κωδικό άμεσα και ενεργοποίησε 2FA!**`)
+        botLogs(bot, `Στο κανάλι ${msg.channel}, ο χρήστης <@${msg.author.id}> έστειλε σύνδεσμο με μη επιτρεπτές λέξεις: \`\`\` ${msg.content}\`\`\``);
+        try {
+            member.timeout(1440 * 60 * 1000, 'URL in blacklist')
+
+        } catch (error) {
+           console.log(error);
+        }
         msg.delete();
         process.env.blockedMessages = process.env.blockedMessages ? parseInt(process.env.blockedMessages) + 1 : 1
         return;
@@ -253,7 +264,12 @@ async function linkCheck(msg, bot){
             }
         })
 
-        msg.author.send(`<@${msg.author.id}> Στο τελευταίο σου μήνυμα:\`\`\` ${msg.content}\`\`\`εντοπίσαμε γνωστούς κακόβουλους συνδέσμους. Λόγω εξάρσεων επιθέσεων spam σε servers του Discord, διαγράψαμε το μήνυμά σου αυτόματα, χωρίς να προχωρίσουμε σε ban. Αν παρατηρηθεί εκτεταμένη ζημιά ή ότι έκανες εκούσια spam, θα αφαιρεθείς μόνιμα από τον server. \n\n **Αν δεν έστειλες εσύ το μήνυμα, άλλαξε κωδικό άμεσα και ενεργοποίησε 2FA!**`)
+        msg.author.send(`<@${msg.author.id}> Στο τελευταίο σου μήνυμα:\`\`\` ${msg.content}\`\`\`εντοπίσαμε γνωστούς κακόβουλους συνδέσμους. Λόγω εξάρσεων επιθέσεων spam σε servers του Discord, διαγράψαμε το μήνυμά σου αυτόματα και σε κάναμε προσωρινά timeout. Αν παρατηρηθεί εκτεταμένη ζημιά ή ότι έκανες εκούσια spam, θα αφαιρεθείς μόνιμα από τον server. \n\n **Αν δεν έστειλες εσύ το μήνυμα, άλλαξε κωδικό άμεσα και ενεργοποίησε 2FA!**`)
+        try {
+            member.timeout(1440 * 60 * 1000, 'URL is malware')
+        } catch (error) {
+           console.log(error);
+        }
 
         botLogs(bot, `Εντοπίστηκε κακόβουλος σύνδεσμος από <@${msg.author.id}> στο ${msg.channel}\n\n Κατηγορίες απειλής: \n ${threats.map(threat=> `**${threat["link"]}** => \`\`${threat["threatTypes"][0]}\`\`\n`).join("")}`)
         process.env.blockedMessages = process.env.blockedMessages ? parseInt(process.env.blockedMessages) + 1 : 1
