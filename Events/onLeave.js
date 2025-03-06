@@ -1,4 +1,3 @@
-const config = require('../Managers/configManager')();
 const discord = require("discord.js");
 const { config } = require('../Utils/environmentUtils');
 const {color, version, footerIcon, footerText} = config;

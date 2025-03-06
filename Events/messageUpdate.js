@@ -1,4 +1,3 @@
-const {logsChannelId} = require('../Managers/configManager')();
 const discord = require('discord.js')
 const emojis = require('../Configs/emojis.json');
 const botLogs = require("../Utils/botLogs")

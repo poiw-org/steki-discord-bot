@@ -1,4 +1,3 @@
-const config = require('../Managers/configManager')();
 const discord = require("discord.js");
 const emojis = require('../Configs/emojis.json');
 const {sendMessageForm} = require("../Managers/embedCreator");
@@ -6,8 +5,6 @@ const fetcher = require("../Configs/fetchMessages.json");
 const { config } = require('../../Utils/environmentUtils');
 const {color, version, footerIcon, footerText} = config;
 const welcomeEmbed = require('../EmbedSetups/welcomeEmbedSetup')
-const {log} = require("nodemon/lib/utils");
-
 
 module.exports = {
     name: "guildMemberAdd",

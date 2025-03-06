@@ -1,17 +1,13 @@
 const discord = require("discord.js");
-const { config } = require('../Utils/environmentUtils');
-const {
-  footerText,
-  footerIcon,
-  color,
-  version,
-} = config;
+const { config } = require("../Utils/environmentUtils");
+const { footerText, footerIcon, color, version } = config;
 const emojis = require("../Configs/emojis.json");
 
-const footerText = process.env.FOOTER_TEXT;
-const footerIcon = process.env.FOOTER_ICON;
-const color = process.env.COLOR;
-const version = process.env.VERSION;
+// These variables are already defined above through destructuring
+// const footerText = process.env.FOOTER_TEXT;
+// const footerIcon = process.env.FOOTER_ICON;
+// const color = process.env.COLOR;
+// const version = process.env.VERSION;
 
 module.exports = {
   send: async (bot, channel, message, time = 0) => {
