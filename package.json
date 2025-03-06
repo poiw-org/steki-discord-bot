@@ -32,6 +32,7 @@
     "crypto": "^1.0.1",
     "date": "^1.0.2",
     "discord.js": "^13.10.3",
+    "dotenv": "^16.0.3",
     "ffmpeg-inject": "^1.0.0",
     "form-data": "^4.0.0",
     "glob": "^7.1.6",

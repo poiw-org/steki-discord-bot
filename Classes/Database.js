@@ -1,11 +1,10 @@
 const { MongoClient } = require("mongodb");
-const {mongo_url} = require('../Configs/botconfig.json')
+const { services } = require("../Utils/environmentUtils");
+const mongo_url = services.mongoUrl;
 
 const client = new MongoClient(mongo_url, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
 });
 
-
-
-module.exports = client
+module.exports = client;
