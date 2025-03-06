@@ -1,10 +1,11 @@
 const discord = require("discord.js");
+const { config } = require('../Utils/environmentUtils');
 const {
   footerText,
   footerIcon,
   color,
   version,
-} = require("../Configs/botconfig.json");
+} = config;
 const emojis = require("../Configs/emojis.json");
 
 const footerText = process.env.FOOTER_TEXT;

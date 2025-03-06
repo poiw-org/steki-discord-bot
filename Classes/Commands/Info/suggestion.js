@@ -1,7 +1,8 @@
 const discord = require ('discord.js')
 const error = require('../../Utils/error')
 const emojis = require('../../Configs/emojis.json')
-const {prefix,footerText,footerIcon,color,version} = require('../../Configs/botconfig.json')
+const { config } = require('../../../Utils/environmentUtils');
+const {prefix,footerText,footerIcon,color,version} = config
 const {suggestionChannelId} = require('../../Managers/configManager')()
 const {sendMessageForm} = require('../../Managers/embedCreator');
 

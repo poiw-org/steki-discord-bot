@@ -2,7 +2,8 @@ const discord = require ('discord.js')
 const error = require('../../Utils/error')
 const timeUtils = require('../../Utils/getTime')
 const emojis = require('../../Configs/emojis.json')
-const {prefix,footerText,footerIcon,color,version} = require('../../Configs/botconfig.json')
+const { config } = require('../../Utils/environmentUtils');
+const {prefix,footerText,footerIcon,color,version} = config
 const {logsChannelId} =  require('../../Managers/configManager')()
 const messageUtils = require('../../Utils/messageUtils')
 

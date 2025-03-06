@@ -1,4 +1,5 @@
-const {footerText,footerIcon,color,version} = require('../Configs/botconfig.json')
+const { config } = require('../../Utils/environmentUtils');
+const {footerText,footerIcon,color,version} = config
 const discord = require('discord.js')
 
 

@@ -1,6 +1,7 @@
 const config = require('../Managers/configManager')();
 const discord = require("discord.js");
-const {color, version, footerIcon, footerText} = require("../Configs/botconfig.json");
+const { config } = require('../Utils/environmentUtils');
+const {color, version, footerIcon, footerText} = config;
 const botLogs = require("../Utils/botLogs")
 
 

@@ -24,7 +24,8 @@
  */
 
 const discord = require ('discord.js')
-const {prefix,color,footerText,version} = require('../../Configs/botconfig.json')
+const { config } = require('../../../Utils/environmentUtils');
+const {prefix,color,footerText,version} = config
 const error = require('../../Utils/error')
 const emojis = require('../../Configs/emojis.json')
 

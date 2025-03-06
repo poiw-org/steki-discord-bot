@@ -3,7 +3,8 @@ const fetchMessages = require('../Managers/MessageFetcher')
 let Ticket = require("../Classes/Ticket.js")
 let Application = require("../Classes/Application")
 const emojis = require('../Configs/emojis.json')
-const {prefix,footerText,footerIcon,color,version} = require('../Configs/botconfig.json')
+const { config } = require('../../Utils/environmentUtils');
+const {prefix,footerText,footerIcon,color,version} = config
 
 
 const config =  require('../Managers/configManager')()
